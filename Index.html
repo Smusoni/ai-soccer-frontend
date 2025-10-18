@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SkillzWithSyd – Prototype</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 720px }
+    h1 { margin: 0 0 12px }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0 }
+    input, button { padding: 10px 12px; font-size: 16px }
+    button { cursor: pointer; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff }
+    ul { padding-left: 20px }
+    .row { display: flex; gap: 8px }
+    .muted { color:#666; font-size: 14px }
+    #msg { margin-top: 8px; }
+    .error { color: #b00020 }
+    .ok { color: #0a7f2e }
+  </style>
+</head>
+<body>
+  <h1>SkillzWithSyd – Prototype</h1>
+  <p class="muted">Add a player and see the shared list. This talks to your live backend.</p>
+
+  <div class="card">
+    <h3>Add player</h3>
+    <div class="row">
+      <input id="name" placeholder="Player name" />
+      <button id="addBtn">Add</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h3>Players</h3>
+    <button id="refresh">Refresh list</button>
+    <ul id="list"></ul>
+  </div>
+
+  <script>
+    const BASE = "https://YOUR_BACKEND_URL_HERE"; // e.g. https://ai-soccer-backend-2-production.up.railway.app
+
+    const nameEl = document.getElementById('name');
+    const msgEl = document.getElementById('msg');
+    const listEl = document.getElementById('list');
+
+    function showMsg(text, ok=true) {
+      msgEl.textContent = text;
+      msgEl.className = ok ? 'ok' : 'error';
+    }
+
+    async function refresh() {
+      listEl.innerHTML = '<li class="muted">Loading…</li>';
+      try {
+        const res = await fetch(`${BASE}/api/players`);
+        const data = await res.json();
+        listEl.innerHTML = '';
+        if (!data.players?.length) {
+          listEl.innerHTML = '<li class="muted">No players yet.</li>';
+          return;
+        }
+        for (const p of data.players) {
+          const li = document.createElement('li');
+          li.textContent = p;
+          listEl.appendChild(li);
+        }
+      } catch (e) {
+        listEl.innerHTML = '<li class="error">Failed to load players.</li>';
+      }
+    }
+
+    document.getElementById('addBtn').onclick = async () => {
+      const name = nameEl.value.trim();
+      if (!name) return showMsg('Please enter a name', false);
+      showMsg('Adding…');
+      try {
+        const res = await fetch(`${BASE}/api/player`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showMsg(`Added ${name} ✅`, true);
+          nameEl.value = '';
+          refresh();
+        } else {
+          showMsg(data.error || 'Could not add player', false);
+        }
+      } catch (e) {
+        showMsg('Network error', false);
+      }
+    };
+
+    document.getElementById('refresh').onclick = refresh;
+
+    // initial load
+    refresh();
+  </script>
+</body>
+</html>
