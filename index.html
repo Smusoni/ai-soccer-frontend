@@ -101,6 +101,20 @@
 
 #splash.hide { animation: fadeout 500ms ease forwards; }
 @keyframes fadeout { to { opacity: 0; visibility: hidden; } }
+  .analysisBox {
+  background: #111;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 10px;
+  line-height: 1.5;
+  color: #eee;
+  box-shadow: 0 0 15px rgba(0,255,100,0.15);
+}
+
+.analysisBox strong {
+  color: #00ff99;
+}
+ 
 </style>
 
 </head>
@@ -131,6 +145,17 @@
     <button id="refresh">Refresh list</button>
     <ul id="list"></ul>
   </div>
+  <!-- Analysis Card -->
+<div class="card" id="analysisCard" style="display:none">
+  <h3>AI Analysis</h3>
+  <p class="muted">Performance breakdown & recommendations.</p>
+
+  <div id="analysisResult" class="analysisBox">
+    <p class="muted">Select a player to view their AI analysis.</p>
+  </div>
+
+  <button id="refreshAnalysis" style="margin-top:12px">Re-run Analysis</button>
+</div>
 
   <script>
     const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
@@ -182,6 +207,29 @@ async function refresh() {
     listEl.appendChild(li);
   });
 }
+// --- Analysis Mock Logic ---
+async function renderAnalysis(playerName) {
+  const box = document.getElementById('analysisResult');
+  const card = document.getElementById('analysisCard');
+  card.style.display = 'block';
+  box.innerHTML = `<p class="muted">Analyzing data for <strong>${playerName}</strong>...</p>`;
+
+  await new Promise(r => setTimeout(r, 1200));
+
+  const results = [
+    { label: "Top Skill", value: "Speed & Awareness" },
+    { label: "Needs Work", value: "Composure under pressure" },
+    { label: "Suggested Drill", value: "Small-space reaction training" },
+    { label: "Pro Comparison", value: "Similar style to Leroy Sané" }
+  ];
+
+  const html = results.map(r => `<p><strong>${r.label}:</strong> ${r.value}</p>`).join('');
+  box.innerHTML = html;
+}
+
+document.getElementById('refreshAnalysis').onclick = () => {
+  if (currentPlayer) renderAnalysis(currentPlayer);
+};
 
 addBtn.onclick = async () => {
   const name = (nameEl.value || '').trim();
