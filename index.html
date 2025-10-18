@@ -4,24 +4,65 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SkillzWithSyd – Prototype</title>
-  <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 720px }
-    h1 { margin: 0 0 12px }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0 }
-    input, button { padding: 10px 12px; font-size: 16px }
-    button { cursor: pointer; border-radius: 8px; border: 1px solid #333; background: #111; color: #fff }
-    ul { padding-left: 20px }
-    .row { display: flex; gap: 8px }
-    .muted { color:#666; font-size: 14px }
-    #msg { margin-top: 8px; }
-    .error { color: #b00020 }
-    .ok { color: #0a7f2e }
-  </style>
+ <style>
+  body {
+    font-family: "Poppins", Arial, sans-serif;
+    background: #0f0f0f;
+    color: #fff;
+    margin: 24px;
+    max-width: 720px;
+    line-height: 1.6;
+  }
+  h1 {
+    margin: 10px 0;
+    font-size: 2rem;
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+  }
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 12px 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  input, button {
+    padding: 10px 12px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+  input {
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+  }
+  button {
+    border: none;
+    background: linear-gradient(90deg, #00aaff, #00ff88);
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+  }
+  button:hover { opacity: 0.8; }
+  ul { padding-left: 20px; }
+  .row { display: flex; gap: 8px; }
+  .muted { color: #aaa; font-size: 14px; }
+  #msg { margin-top: 8px; }
+  .error { color: #ff5555; }
+  .ok { color: #00ff88; }
+  img.logo {
+    width: 180px;
+    margin-bottom: 10px;
+  }
+</style>
+
 </head>
 <body>
-  <h1>SkillzWithSyd – Prototype</h1>
-  <p class="muted">Add a player and see the shared list. This talks to your live backend.</p>
-
+  <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo" class="logo">
+<h1>Ball Knowledge</h1>
+<p class="muted">Analyze. Learn. Evolve.</p>
+  
   <div class="card">
     <h3>Add player</h3>
     <div class="row">
