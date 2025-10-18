@@ -55,10 +55,48 @@
     width: 180px;
     margin-bottom: 10px;
   }
+   /* --- Splash / Intro --- */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; flex-direction: column; gap: 16px;
+  align-items: center; justify-content: center;
+  background: #0f0f0f;
+}
+
+#splash .logo {
+  width: 160px; height: auto; opacity: 0.95;
+}
+
+#splash h1 {
+  margin: 8px 0 0; font-size: 2.2rem; color: #00ff88;
+  text-shadow: 0 0 12px rgba(0,255,136,0.55);
+}
+
+#splash p { color: #aaa; margin: 0; }
+
+.spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: #00aaff;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#splash.hide { animation: fadeout 500ms ease forwards; }
+@keyframes fadeout { to { opacity: 0; visibility: hidden; } }
 </style>
 
 </head>
 <body>
+  <!-- Intro / Splash -->
+<div id="splash">
+  <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo" class="logo" />
+  <h1>Ball Knowledge</h1>
+  <p>Initializing AI… connecting to server</p>
+  <div class="spinner"></div>
+</div>
+
   <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo" class="logo">
 <h1>Ball Knowledge</h1>
 <p class="muted">Analyze. Learn. Evolve.</p>
@@ -80,6 +118,26 @@
 
   <script>
     const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
+    
+  // --- Splash boot logic ---
+  async function bootSplash() {
+    const splash = document.getElementById('splash');
+
+    // minimum display so it feels deliberate
+    const minDelay = new Promise(r => setTimeout(r, 1200));
+
+    // ping backend health (don’t crash if it fails)
+    const ping = fetch(`${BASE}/api/health`, { cache: 'no-store' })
+      .then(r => r.json()).catch(() => ({}));
+
+    await Promise.allSettled([minDelay, ping]);
+
+    // fade out & remove
+    splash.classList.add('hide');
+    setTimeout(() => splash.remove(), 600);
+  }
+  bootSplash();
+</script>
 
     const nameEl = document.getElementById('name');
     const msgEl = document.getElementById('msg');
