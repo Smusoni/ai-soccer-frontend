@@ -159,6 +159,24 @@
 
   <script>
     const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
+// ---- SUPER-ROBUST SPLASH KILLER ----
+(function () {
+  function killSplash() {
+    const s = document.getElementById('splash');
+    if (s) {
+      s.classList.add('hide');
+      setTimeout(() => s.remove(), 400); // remove element
+      console.log('[BK] Splash removed');
+    }
+  }
+  // if everything is fine, this fires quickly
+  window.addEventListener('load', () => setTimeout(killSplash, 900));
+  // if something blocks load, try on DOM ready
+  document.addEventListener('DOMContentLoaded', () => setTimeout(killSplash, 1800));
+  // last resort: nuke after 4s no matter what
+  setTimeout(killSplash, 4000);
+})();
+    
     // --- Splash failsafe: hide even if other code errors ---
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
@@ -188,36 +206,6 @@ window.addEventListener('DOMContentLoaded', () => {
     splash.classList.add('hide');
     setTimeout(() => splash.remove(), 600);
   }
-  bootSplash();
-    // --- wiring (make sure these IDs exist) ---
-const nameEl = document.getElementById('name');
-const addBtn = document.getElementById('addBtn');
-const refreshBtn = document.getElementById('refresh');
-const listEl = document.getElementById('list');
-const msgEl = document.getElementById('msg');
-
-function showMsg(text, ok=true) {
-  msgEl.textContent = text;
-  msgEl.className = ok ? 'ok' : 'error';
-}
-
-async function refresh() {
-  listEl.innerHTML = '<li class="muted">Loading…</li>';
-  const res = await fetch(`${BASE}/api/players`);
-  const data = await res.json();
-  listEl.innerHTML = '';
-  if (!data.players || !data.players.length) {
-    listEl.innerHTML = '<li class="muted">No players yet.</li>';
-    return;
-  }
-  data.players.forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = p;
-    li.style.cursor = 'pointer';
-    li.onclick = () => renderAnalysis(p); // uses the analytics function we added
-    listEl.appendChild(li);
-  });
-}
 // --- Analysis Mock Logic ---
 async function renderAnalysis(playerName) {
   const box = document.getElementById('analysisResult');
