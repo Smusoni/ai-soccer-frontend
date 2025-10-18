@@ -159,6 +159,17 @@
 
   <script>
     const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
+    // --- Splash failsafe: hide even if other code errors ---
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const s = document.getElementById('splash');
+    if (s) {
+      s.classList.add('hide');
+      setTimeout(() => s.remove(), 600);
+    }
+  }, 2000); // 2s
+});
+
     
   // --- Splash boot logic ---
   async function bootSplash() {
@@ -227,9 +238,12 @@ async function renderAnalysis(playerName) {
   box.innerHTML = html;
 }
 
-document.getElementById('refreshAnalysis').onclick = () => {
-  if (currentPlayer) renderAnalysis(currentPlayer);
-};
+const refreshAnalysisBtn = document.getElementById('refreshAnalysis');
+if (refreshAnalysisBtn) {
+  refreshAnalysisBtn.onclick = () => {
+    if (currentPlayer) renderAnalysis(currentPlayer);
+  };
+}
 
 addBtn.onclick = async () => {
   const name = (nameEl.value || '').trim();
