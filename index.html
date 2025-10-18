@@ -153,6 +153,63 @@
     setTimeout(() => splash.remove(), 600);
   }
   bootSplash();
+    // --- wiring (make sure these IDs exist) ---
+const nameEl = document.getElementById('name');
+const addBtn = document.getElementById('addBtn');
+const refreshBtn = document.getElementById('refresh');
+const listEl = document.getElementById('list');
+const msgEl = document.getElementById('msg');
+
+function showMsg(text, ok=true) {
+  msgEl.textContent = text;
+  msgEl.className = ok ? 'ok' : 'error';
+}
+
+async function refresh() {
+  listEl.innerHTML = '<li class="muted">Loading…</li>';
+  const res = await fetch(`${BASE}/api/players`);
+  const data = await res.json();
+  listEl.innerHTML = '';
+  if (!data.players || !data.players.length) {
+    listEl.innerHTML = '<li class="muted">No players yet.</li>';
+    return;
+  }
+  data.players.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = p;
+    li.style.cursor = 'pointer';
+    li.onclick = () => renderAnalysis(p); // uses the analytics function we added
+    listEl.appendChild(li);
+  });
+}
+
+addBtn.onclick = async () => {
+  const name = (nameEl.value || '').trim();
+  if (!name) return showMsg('Please enter a name', false);
+
+  try {
+    const res = await fetch(`${BASE}/api/player`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showMsg(`Added ${name} ✅`, true);
+      nameEl.value = '';
+      refresh();
+      renderAnalysis(name); // show analytics immediately
+    } else {
+      showMsg(data.error || 'Could not add player', false);
+    }
+  } catch (e) {
+    showMsg('Network error', false);
+  }
+};
+
+refreshBtn.onclick = refresh;
+refresh(); // initial load
+
 </script>
 
     const nameEl = document.getElementById('name');
