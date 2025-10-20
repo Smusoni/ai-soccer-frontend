@@ -261,62 +261,89 @@ refreshBtn.onclick = refresh;
 refresh(); // initial load
 
 
-    const nameEl = document.getElementById('name');
-    const msgEl = document.getElementById('msg');
-    const listEl = document.getElementById('list');
+// ---- wiring (elements) ----
+const nameEl     = document.getElementById('name');
+const addBtn     = document.getElementById('addBtn');
+const refreshBtn = document.getElementById('refresh');
+const listEl     = document.getElementById('list');
+const msgEl      = document.getElementById('msg');
 
-    function showMsg(text, ok=true) {
-      msgEl.textContent = text;
-      msgEl.className = ok ? 'ok' : 'error';
+function showMsg(text, ok = true) {
+  if (!msgEl) return;
+  msgEl.textContent = text;
+  msgEl.className = ok ? 'ok' : 'error';
+}
+
+// === refresh list (defensive + logs) ===
+async function refresh() {
+  try {
+    if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
+
+    const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
+    console.log('[BK] GET /players status', res.status);
+    const data = await res.json();
+    console.log('[BK] /players body', data);
+
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (!data.players || !data.players.length) {
+      listEl.innerHTML = '<li class="muted">No players yet.</li>';
+      return;
     }
 
-    async function refresh() {
-      listEl.innerHTML = '<li class="muted">Loading…</li>';
-      try {
-        const res = await fetch(`${BASE}/api/players`);
-        const data = await res.json();
-        listEl.innerHTML = '';
-        if (!data.players?.length) {
-          listEl.innerHTML = '<li class="muted">No players yet.</li>';
-          return;
-        }
-        for (const p of data.players) {
-          const li = document.createElement('li');
-          li.textContent = p;
-          listEl.appendChild(li);
-        }
-      } catch (e) {
-        listEl.innerHTML = '<li class="error">Failed to load players.</li>';
+    data.players.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = p;
+      li.style.cursor = 'pointer';
+      // When a player is clicked: show analysis; loadProfile if present
+      li.onclick = () => {
+        try { renderAnalysis && renderAnalysis(p); } catch (_) {}
+        try { typeof loadProfile === 'function' && loadProfile(p); } catch (_) {}
+      };
+      listEl.appendChild(li);
+    });
+  } catch (e) {
+    console.error('[BK] refresh error', e);
+    if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
+  }
+}
+
+// === add player (defensive + logs) ===
+if (addBtn) {
+  addBtn.onclick = async () => {
+    const name = (nameEl?.value || '').trim();
+    if (!name) return showMsg('Please enter a name', false);
+
+    try {
+      const res  = await fetch(`${BASE}/api/player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      console.log('[BK] POST /player status', res.status);
+      const data = await res.json();
+      console.log('[BK] /player body', data);
+
+      if (data.ok) {
+        showMsg(`Added ${name} ✅`, true);
+        if (nameEl) nameEl.value = '';
+        await refresh();
+        try { renderAnalysis && renderAnalysis(name); } catch (_) {}
+        try { typeof loadProfile === 'function' && loadProfile(name); } catch (_) {}
+      } else {
+        showMsg(data.error || 'Could not add player', false);
       }
+    } catch (e) {
+      console.error('[BK] add error', e);
+      showMsg('Network error', false);
     }
+  };
+}
 
-    document.getElementById('addBtn').onclick = async () => {
-      const name = nameEl.value.trim();
-      if (!name) return showMsg('Please enter a name', false);
-      showMsg('Adding…');
-      try {
-        const res = await fetch(`${BASE}/api/player`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          showMsg(`Added ${name} ✅`, true);
-          nameEl.value = '';
-          refresh();
-        } else {
-          showMsg(data.error || 'Could not add player', false);
-        }
-      } catch (e) {
-        showMsg('Network error', false);
-      }
-    };
-
-    document.getElementById('refresh').onclick = refresh;
-
-    // initial load
-    refresh();
+// hook up Refresh button + initial load
+if (refreshBtn) refreshBtn.onclick = refresh;
+refresh();
   </script>
 </body>
 </html>
