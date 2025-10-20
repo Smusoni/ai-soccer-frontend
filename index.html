@@ -158,259 +158,129 @@
 </div>
 
   <script>
-    const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
-    
-// ---- SUPER-ROBUST SPLASH KILLER ----
-(function () {
-  function killSplash() {
-    const s = document.getElementById('splash');
-    if (s) {
-      s.classList.add('hide');
-      setTimeout(() => s.remove(), 400); // remove element
-      console.log('[BK] Splash removed');
+  // ================== CONFIG ==================
+  const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
+  let currentPlayer = null;
+
+  // ================== SPLASH KILLER ==================
+  (function () {
+    function killSplash() {
+      const s = document.getElementById('splash');
+      if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 400); }
     }
+    window.addEventListener('load', () => setTimeout(killSplash, 900));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(killSplash, 1800));
+    setTimeout(killSplash, 4000); // last resort
+  })();
+
+  // ================== ANALYSIS (mock) ==================
+  async function renderAnalysis(playerName) {
+    currentPlayer = playerName;
+    const card = document.getElementById('analysisCard');
+    const box  = document.getElementById('analysisResult');
+    if (!card || !box) return;
+    card.style.display = 'block';
+    box.innerHTML = `<p class="muted">Analyzing data for <strong>${playerName}</strong>…</p>`;
+    await new Promise(r => setTimeout(r, 1200));
+    const results = [
+      { label: "Top Skill",       value: "Speed & Awareness" },
+      { label: "Needs Work",      value: "Composure under pressure" },
+      { label: "Suggested Drill", value: "Small-space reaction training" },
+      { label: "Pro Comparison",  value: "Similar style to Leroy Sané" }
+    ];
+    box.innerHTML = results.map(r => `<p><strong>${r.label}:</strong> ${r.value}</p>`).join('');
   }
-  // if everything is fine, this fires quickly
-  window.addEventListener('load', () => setTimeout(killSplash, 900));
-  // if something blocks load, try on DOM ready
-  document.addEventListener('DOMContentLoaded', () => setTimeout(killSplash, 1800));
-  // last resort: nuke after 4s no matter what
-  setTimeout(killSplash, 4000);
-})();
-    
-    // --- Splash failsafe: hide even if other code errors ---
-window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    const s = document.getElementById('splash');
-    if (s) {
-      s.classList.add('hide');
-      setTimeout(() => s.remove(), 600);
-    }
-  }, 2000); // 2s
-});
+  // if the button exists, hook it
+  (function () {
+    const btn = document.getElementById('refreshAnalysis');
+    if (btn) btn.onclick = () => { if (currentPlayer) renderAnalysis(currentPlayer); };
+  })();
 
-    
-  // --- Splash boot logic ---
-  async function bootSplash() {
-    const splash = document.getElementById('splash');
-
-    // minimum display so it feels deliberate
-    const minDelay = new Promise(r => setTimeout(r, 1200));
-
-    // ping backend health (don’t crash if it fails)
-    const ping = fetch(`${BASE}/api/health`, { cache: 'no-store' })
-      .then(r => r.json()).catch(() => ({}));
-
-    await Promise.allSettled([minDelay, ping]);
-
-    // fade out & remove
-    splash.classList.add('hide');
-    setTimeout(() => splash.remove(), 600);
+  // ================== OPTIONAL PROFILE ==================
+  // If you added loadProfile elsewhere, great. If not, guard calls.
+  function safeLoadProfile(name) {
+    try { if (typeof loadProfile === 'function') loadProfile(name); } catch (_) {}
   }
-// --- Analysis Mock Logic ---
-async function renderAnalysis(playerName) {
-  const box = document.getElementById('analysisResult');
-  const card = document.getElementById('analysisCard');
-  card.style.display = 'block';
-  box.innerHTML = `<p class="muted">Analyzing data for <strong>${playerName}</strong>...</p>`;
 
-  await new Promise(r => setTimeout(r, 1200));
+  // ================== ELEMENTS / MESSAGES ==================
+  const nameEl     = document.getElementById('name');
+  const addBtn     = document.getElementById('addBtn');
+  const refreshBtn = document.getElementById('refresh');
+  const listEl     = document.getElementById('list');
+  const msgEl      = document.getElementById('msg');
 
-  const results = [
-    { label: "Top Skill", value: "Speed & Awareness" },
-    { label: "Needs Work", value: "Composure under pressure" },
-    { label: "Suggested Drill", value: "Small-space reaction training" },
-    { label: "Pro Comparison", value: "Similar style to Leroy Sané" }
-  ];
-
-  const html = results.map(r => `<p><strong>${r.label}:</strong> ${r.value}</p>`).join('');
-  box.innerHTML = html;
-}
-
-const refreshAnalysisBtn = document.getElementById('refreshAnalysis');
-if (refreshAnalysisBtn) {
-  refreshAnalysisBtn.onclick = () => {
-    if (currentPlayer) renderAnalysis(currentPlayer);
-  };
-}
-
-addBtn.onclick = async () => {
-  const name = (nameEl.value || '').trim();
-  if (!name) return showMsg('Please enter a name', false);
-
-  try {
-    const res = await fetch(`${BASE}/api/player`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showMsg(`Added ${name} ✅`, true);
-      nameEl.value = '';
-      refresh();
-      renderAnalysis(name); // show analytics immediately
-    } else {
-      showMsg(data.error || 'Could not add player', false);
-    }
-  } catch (e) {
-    showMsg('Network error', false);
+  function showMsg(text, ok = true) {
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.className = ok ? 'ok' : 'error';
   }
-};
 
-refreshBtn.onclick = refresh;
-refresh(); // initial load
-
-    
-// ---- wiring (elements) ----
-const nameEl     = document.getElementById('name');
-const addBtn     = document.getElementById('addBtn');
-const refreshBtn = document.getElementById('refresh');
-const listEl     = document.getElementById('list');
-const msgEl      = document.getElementById('msg');
-
-function showMsg(text, ok = true) {
-  if (!msgEl) return;
-  msgEl.textContent = text;
-  msgEl.className = ok ? 'ok' : 'error';
-}
-
-// === refresh list (defensive + logs) ===
-async function refresh() {
-  try {
-    if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
-
-    const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
-    console.log('[BK] GET /players status', res.status);
-    const data = await res.json();
-    console.log('[BK] /players body', data);
-
-    if (!listEl) return;
-    listEl.innerHTML = '';
-
-    if (!data.players || !data.players.length) {
-      listEl.innerHTML = '<li class="muted">No players yet.</li>';
-      return;
-    }
-
-    data.players.forEach(p => {
-      const li = document.createElement('li');
-      li.textContent = p;
-      li.style.cursor = 'pointer';
-      // When a player is clicked: show analysis; loadProfile if present
-      li.onclick = () => {
-        try { renderAnalysis && renderAnalysis(p); } catch (_) {}
-        try { typeof loadProfile === 'function' && loadProfile(p); } catch (_) {}
-      };
-      listEl.appendChild(li);
-    });
-  } catch (e) {
-    console.error('[BK] refresh error', e);
-    if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
-  }
-}
-
-// === add player (defensive + logs) ===
-if (addBtn) {
-  addBtn.onclick = async () => {
-    const name = (nameEl?.value || '').trim();
-    if (!name) return showMsg('Please enter a name', false);
-
+  // ================== REFRESH LIST ==================
+  async function refresh() {
     try {
-      const res  = await fetch(`${BASE}/api/player`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      console.log('[BK] POST /player status', res.status);
+      if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
+      const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
+      console.log('[BK] GET /players status', res.status);
       const data = await res.json();
-      console.log('[BK] /player body', data);
+      console.log('[BK] /players body', data);
 
-      if (data.ok) {
-        showMsg(`Added ${name} ✅`, true);
-        if (nameEl) nameEl.value = '';
-        await refresh();
-        try { renderAnalysis && renderAnalysis(name); } catch (_) {}
-        try { typeof loadProfile === 'function' && loadProfile(name); } catch (_) {}
-      } else {
-        showMsg(data.error || 'Could not add player', false);
+      if (!listEl) return;
+      listEl.innerHTML = '';
+
+      if (!data.players || !data.players.length) {
+        listEl.innerHTML = '<li class="muted">No players yet.</li>';
+        return;
       }
-    } catch (e) {
-      console.error('[BK] add error', e);
-      showMsg('Network error', false);
-    }
-  };
-}
 
-// hook up Refresh button + initial load
-if (refreshBtn) refreshBtn.onclick = refresh;
-refresh();
+      data.players.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p;
+        li.style.cursor = 'pointer';
+        li.onclick = () => { renderAnalysis(p); safeLoadProfile(p); };
+        listEl.appendChild(li);
+      });
+    } catch (e) {
+      console.error('[BK] refresh error', e);
+      if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
+    }
+  }
+
+  // ================== ADD PLAYER ==================
+  if (addBtn) {
+    addBtn.onclick = async () => {
+      const name = (nameEl?.value || '').trim();
+      if (!name) return showMsg('Please enter a name', false);
+
       try {
-    if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
+        const res  = await fetch(`${BASE}/api/player`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        console.log('[BK] POST /player status', res.status);
+        const data = await res.json();
+        console.log('[BK] /player body', data);
 
-    const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
-    console.log('[BK] GET /players status', res.status);
-    const data = await res.json();
-    console.log('[BK] /players body', data);
-
-    if (!listEl) return;
-    listEl.innerHTML = '';
-
-    if (!data.players || !data.players.length) {
-      listEl.innerHTML = '<li class="muted">No players yet.</li>';
-      return;
-    }
-
-    data.players.forEach(p => {
-      const li = document.createElement('li');
-      li.textContent = p;
-      li.style.cursor = 'pointer';
-      li.onclick = () => {
-        try { renderAnalysis && renderAnalysis(p); } catch (_) {}
-        try { typeof loadProfile === 'function' && loadProfile(p); } catch (_) {}
-      };
-      listEl.appendChild(li);
-    });
-  } catch (e) {
-    console.error('[BK] refresh error', e);
-    if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
-  }
-}
-// add player (defensive + logs)
-if (addBtn) {
-  addBtn.onclick = async () => {
-    const name = (nameEl?.value || '').trim();
-    if (!name) return showMsg('Please enter a name', false);
-
-    try {
-      const res  = await fetch(`${BASE}/api/player`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      console.log('[BK] POST /player status', res.status);
-      const data = await res.json();
-      console.log('[BK] /player body', data);
-
-      if (data.ok) {
-        showMsg(`Added ${name} ✅`, true);
-        if (nameEl) nameEl.value = '';
-        await refresh();
-        try { renderAnalysis && renderAnalysis(name); } catch (_) {}
-        try { typeof loadProfile === 'function' && loadProfile(name); } catch (_) {}
-      } else {
-        showMsg(data.error || 'Could not add player', false);
+        if (data.ok) {
+          showMsg(`Added ${name} ✅`, true);
+          if (nameEl) nameEl.value = '';
+          await refresh();
+          renderAnalysis(name);
+          safeLoadProfile(name);
+        } else {
+          showMsg(data.error || 'Could not add player', false);
+        }
+      } catch (e) {
+        console.error('[BK] add error', e);
+        showMsg('Network error', false);
       }
-    } catch (e) {
-      console.error('[BK] add error', e);
-      showMsg('Network error', false);
-    }
-  };
-}
-    if (refreshBtn) refreshBtn.onclick = refresh;
-refresh(); // initial load
+    };
+  }
 
+  // ================== HOOK REFRESH + FIRST LOAD ==================
+  if (refreshBtn) refreshBtn.onclick = refresh;
+  refresh();
+</script>
 
-  </script>
 </body>
 </html>
