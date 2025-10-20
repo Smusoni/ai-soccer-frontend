@@ -345,6 +345,72 @@ if (addBtn) {
 // hook up Refresh button + initial load
 if (refreshBtn) refreshBtn.onclick = refresh;
 refresh();
+      try {
+    if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
+
+    const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
+    console.log('[BK] GET /players status', res.status);
+    const data = await res.json();
+    console.log('[BK] /players body', data);
+
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (!data.players || !data.players.length) {
+      listEl.innerHTML = '<li class="muted">No players yet.</li>';
+      return;
+    }
+
+    data.players.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = p;
+      li.style.cursor = 'pointer';
+      li.onclick = () => {
+        try { renderAnalysis && renderAnalysis(p); } catch (_) {}
+        try { typeof loadProfile === 'function' && loadProfile(p); } catch (_) {}
+      };
+      listEl.appendChild(li);
+    });
+  } catch (e) {
+    console.error('[BK] refresh error', e);
+    if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
+  }
+}
+// add player (defensive + logs)
+if (addBtn) {
+  addBtn.onclick = async () => {
+    const name = (nameEl?.value || '').trim();
+    if (!name) return showMsg('Please enter a name', false);
+
+    try {
+      const res  = await fetch(`${BASE}/api/player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      console.log('[BK] POST /player status', res.status);
+      const data = await res.json();
+      console.log('[BK] /player body', data);
+
+      if (data.ok) {
+        showMsg(`Added ${name} ✅`, true);
+        if (nameEl) nameEl.value = '';
+        await refresh();
+        try { renderAnalysis && renderAnalysis(name); } catch (_) {}
+        try { typeof loadProfile === 'function' && loadProfile(name); } catch (_) {}
+      } else {
+        showMsg(data.error || 'Could not add player', false);
+      }
+    } catch (e) {
+      console.error('[BK] add error', e);
+      showMsg('Network error', false);
+    }
+  };
+}
+    if (refreshBtn) refreshBtn.onclick = refresh;
+refresh(); // initial load
+
+
   </script>
 </body>
 </html>
