@@ -261,37 +261,47 @@ const UPLOAD_PRESET = "ballknowledge_unsigned";
       ];
       analysisResult.innerHTML = rows.map(([k,v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('');
     }
+    
+// ================== REFRESH PLAYER LIST ==================
+async function refresh() {
+  try {
+    if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
+    const res = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Server responded ${res.status}`);
+    const data = await res.json();
 
-    // Refresh list
-    async function refresh() {
-      try {
-        if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
-        const res = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
-        const data = await res.json();
-        if (!listEl) return;
-        listEl.innerHTML = '';
-        const players = data.players || [];
-        if (!players.length) {
-          listEl.innerHTML = '<li class="muted">No players yet.</li>';
-          return;
-        }
-        players.forEach(p => {
-          const li = document.createElement('li');
-          li.textContent = p;
-          li.style.cursor = 'pointer';
-          li.onclick = () => {
-            currentPlayer = p;
-            renderAnalysis(p);
-            if (attrCard) attrCard.style.display = 'block';
-            if (uploadCard) uploadCard.style.display = 'block';
-          };
-          listEl.appendChild(li);
-        });
-      } catch (e) {
-        console.error('[BK] refresh error', e);
-        if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
-      }
+    if (!data || !data.players) {
+      listEl.innerHTML = '<li class="error">No player data found.</li>';
+      return;
     }
+
+    const players = data.players;
+    listEl.innerHTML = '';
+
+    if (players.length === 0) {
+      listEl.innerHTML = '<li class="muted">No players yet.</li>';
+      return;
+    }
+
+    players.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = `${p.name || p} — ⚡ Rating: ${p.rating || 'N/A'}`;
+      li.style.cursor = 'pointer';
+
+      li.onclick = () => {
+        currentPlayer = p;
+        renderAnalysis(p);
+        if (attrCard) attrCard.style.display = 'block';
+      };
+
+      listEl.appendChild(li);
+    });
+  } catch (err) {
+    console.error('[BallKnowledge] refresh error:', err);
+    listEl.innerHTML =
+      '<li class="error">⚠️ Failed to load players. Server may be offline.</li>';
+  }
+}
 
     // Add player
     if (addBtn) {
