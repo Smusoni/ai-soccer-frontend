@@ -201,252 +201,166 @@
   <video id="previewPlayer" controls width="320" height="240" style="border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.2);"></video>
 </div>
 
-
-  <script>
-  // ================== CONFIG ==================
-  const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
-  let currentPlayer = null;
-
-  // ================== SPLASH KILLER ==================
-  (function () {
-    function killSplash() {
-      const s = document.getElementById('splash');
-      if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 400); }
-    }
-    window.addEventListener('load', () => setTimeout(killSplash, 900));
-    document.addEventListener('DOMContentLoaded', () => setTimeout(killSplash, 1800));
-    setTimeout(killSplash, 4000); // last resort
-  })();
-
-  // ================== ANALYSIS (mock) ==================
-  async function renderAnalysis(playerName) {
-    currentPlayer = playerName;
-    const card = document.getElementById('analysisCard');
-    const box  = document.getElementById('analysisResult');
-    if (!card || !box) return;
-    card.style.display = 'block';
-    box.innerHTML = `<p class="muted">Analyzing data for <strong>${playerName}</strong>…</p>`;
-    await new Promise(r => setTimeout(r, 1200));
-    const results = [
-      { label: "Top Skill",       value: "Speed & Awareness" },
-      { label: "Needs Work",      value: "Composure under pressure" },
-      { label: "Suggested Drill", value: "Small-space reaction training" },
-      { label: "Pro Comparison",  value: "Similar style to Leroy Sané" }
-    ];
-    box.innerHTML = results.map(r => `<p><strong>${r.label}:</strong> ${r.value}</p>`).join('');
-  }
-  // if the button exists, hook it
-  (function () {
-    const btn = document.getElementById('refreshAnalysis');
-    if (btn) btn.onclick = () => { if (currentPlayer) renderAnalysis(currentPlayer); };
-  })();
-
-  // ================== OPTIONAL PROFILE ==================
-  // If you added loadProfile elsewhere, great. If not, guard calls.
-  function safeLoadProfile(name) {
-    try { if (typeof loadProfile === 'function') loadProfile(name); } catch (_) {}
-  }
-
-  // ================== ELEMENTS / MESSAGES ==================
-  const nameEl     = document.getElementById('name');
-  const addBtn     = document.getElementById('addBtn');
-  const refreshBtn = document.getElementById('refresh');
-  const listEl     = document.getElementById('list');
-  const msgEl      = document.getElementById('msg');
-
-  function showMsg(text, ok = true) {
-    if (!msgEl) return;
-    msgEl.textContent = text;
-    msgEl.className = ok ? 'ok' : 'error';
-  }
-
-  // ================== REFRESH LIST ==================
-  async function refresh() {
-    try {
-      if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
-      const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
-      console.log('[BK] GET /players status', res.status);
-      const data = await res.json();
-      console.log('[BK] /players body', data);
-
-      if (!listEl) return;
-      listEl.innerHTML = '';
-
-      if (!data.players || !data.players.length) {
-        listEl.innerHTML = '<li class="muted">No players yet.</li>';
-        return;
-      }
-
-      data.players.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = p;
-        li.style.cursor = 'pointer';
-        li.onclick = () => { renderAnalysis(p); safeLoadProfile(p); showAttrCardFor(p); };
-        listEl.appendChild(li);
-      });
-    } catch (e) {
-      console.error('[BK] refresh error', e);
-      if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
-    }
-  }
-
-  // ================== ADD PLAYER ==================
-  if (addBtn) {
-    addBtn.onclick = async () => {
-      const name = (nameEl?.value || '').trim();
-      if (!name) return showMsg('Please enter a name', false);
-
-      try {
-        const res  = await fetch(`${BASE}/api/player`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        console.log('[BK] POST /player status', res.status);
-        const data = await res.json();
-        console.log('[BK] /player body', data);
-
-        if (data.ok) {
-          showMsg(`Added ${name} ✅`, true);
-          if (nameEl) nameEl.value = '';
-          await refresh();
-          renderAnalysis(name);
-          safeLoadProfile(name);
-        } else {
-          showMsg(data.error || 'Could not add player', false);
-        }
-      } catch (e) {
-        console.error('[BK] add error', e);
-        showMsg('Network error', false);
-      }
-    };
-  }
-    // --- simple per-player storage (localStorage for now)
-function attrKey(player) { return `BK_ATTR_${player}`; }
-
-function loadAttrs(player) {
-  try { return JSON.parse(localStorage.getItem(attrKey(player))) || null; }
-  catch { return null; }
-}
-
-function saveAttrs(player, attrs) {
-  localStorage.setItem(attrKey(player), JSON.stringify(attrs));
-}
-
-// Show/seed the card when a player is selected
-function showAttrCardFor(player) {
-  const card = document.getElementById('attrCard');
-  if (!card) return;
-  card.style.display = 'block';
-  const preset = loadAttrs(player) || { pace:60, tech:60, aware:60, comp:60 };
-  const $ = id => document.getElementById(id);
-  const set = (id, valId, v) => { $(id).value = v; $(valId).textContent = v; };
-  set('attrPace','attrPaceVal', preset.pace);
-  set('attrTech','attrTechVal', preset.tech);
-  set('attrAware','attrAwareVal', preset.aware);
-  set('attrComp','attrCompVal', preset.comp);
-}
-
-// Hook Save button once
-(function () {
-  const btn = document.getElementById('saveAttrs');
-  if (!btn) return;
-  btn.onclick = () => {
-    if (!currentPlayer) { document.getElementById('attrMsg').textContent = 'Pick a player first.'; return; }
-    const get = id => Number(document.getElementById(id).value || 0);
-    const attrs = { pace:get('attrPace'), tech:get('attrTech'), aware:get('attrAware'), comp:get('attrComp') };
-    saveAttrs(currentPlayer, attrs);
-    document.getElementById('attrMsg').textContent = 'Saved ✅';
-    // (optional) nudge the analysis to reflect attributes a bit
-    try { renderAnalysis(currentPlayer); } catch {}
-  };
-})();
-  
-    // === CLOUDINARY DIRECT UPLOAD ===
+<script>
+// ====== CONFIG ======
+const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
 const CLOUD_NAME = "dblconpx8";
 const UPLOAD_PRESET = "ballknowledge_unsigned";
-    
-const uploadBtn = document.getElementById('uploadBtn');
-const fileInput = document.getElementById('clipFile');
-const uploadMsg = document.getElementById('uploadMsg');
-const videoPreview = document.getElementById('videoPreview');
-const previewPlayer = document.getElementById('previewPlayer');
 
-if (uploadBtn && fileInput) {
-  uploadBtn.onclick = async () => {
-    const file = fileInput.files[0];
-    if (!file) {
-      uploadMsg.textContent = "Please select a video first.";
-      return;
+(function () {
+  // ====== NUKE THE SPLASH (robust) ======
+  function killSplash() {
+    const s = document.getElementById('splash');
+    if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 400); }
+  }
+  window.addEventListener('load', () => setTimeout(killSplash, 800));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(killSplash, 1600));
+  setTimeout(killSplash, 4000); // last resort
+
+  // ====== BOOT ON DOM READY ======
+  document.addEventListener('DOMContentLoaded', () => {
+    const $ = id => document.getElementById(id);
+
+    // Elements
+    const nameEl = $('name');
+    const addBtn = $('addBtn');
+    const msgEl = $('msg');
+    const refreshBtn = $('refresh');
+    const listEl = $('list');
+    const analysisCard = $('analysisCard');
+    const analysisResult = $('analysisResult');
+
+    const attrCard = $('attrCard');
+    const uploadCard = $('uploadCard');
+    const uploadBtn = $('uploadBtn');
+    const fileInput = $('clipFile');
+    const uploadMsg = $('uploadMsg');
+    const videoPreview = $('videoPreview');
+    const previewPlayer = $('previewPlayer');
+
+    let currentPlayer = null;
+
+    // Helpers
+    const showMsg = (text, ok = true) => {
+      if (!msgEl) return;
+      msgEl.textContent = text;
+      msgEl.className = ok ? 'ok' : 'error';
+    };
+
+    // Analysis (mock)
+    async function renderAnalysis(playerName) {
+      if (!analysisCard || !analysisResult) return;
+      analysisCard.style.display = 'block';
+      analysisResult.innerHTML = `<p class="muted">Analyzing <strong>${playerName}</strong>…</p>`;
+      await new Promise(r => setTimeout(r, 900));
+      const rows = [
+        ['Top Skill','Speed & Awareness'],
+        ['Needs Work','Composure under pressure'],
+        ['Suggested Drill','Small-space reaction training'],
+        ['Pro Comparison','Similar to Leroy Sané']
+      ];
+      analysisResult.innerHTML = rows.map(([k,v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('');
     }
 
-    uploadMsg.textContent = "Uploading...";
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (data.secure_url) {
-        uploadMsg.textContent = "✅ Upload complete!";
-        console.log("Video URL:", data.secure_url);
-
-        // show the video preview
-        previewPlayer.src = data.secure_url;
-        videoPreview.style.display = "block";
-      } else {
-        uploadMsg.textContent = "❌ Upload failed. Try again.";
+    // Refresh list
+    async function refresh() {
+      try {
+        if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
+        const res = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
+        const data = await res.json();
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        const players = data.players || [];
+        if (!players.length) {
+          listEl.innerHTML = '<li class="muted">No players yet.</li>';
+          return;
+        }
+        players.forEach(p => {
+          const li = document.createElement('li');
+          li.textContent = p;
+          li.style.cursor = 'pointer';
+          li.onclick = () => {
+            currentPlayer = p;
+            renderAnalysis(p);
+            if (attrCard) attrCard.style.display = 'block';
+            if (uploadCard) uploadCard.style.display = 'block';
+          };
+          listEl.appendChild(li);
+        });
+      } catch (e) {
+        console.error('[BK] refresh error', e);
+        if (listEl) listEl.innerHTML = '<li class="error">Failed to load players</li>';
       }
-    } catch (err) {
-      uploadMsg.textContent = "⚠ Error uploading.";
-      console.error(err);
-    }
-  };
-}
-
-const uploadBtn = document.getElementById('uploadBtn');
-const fileInput = document.getElementById('fileInput');
-const uploadMsg = document.getElementById('uploadMsg');
-
-if (uploadBtn) {
-  uploadBtn.onclick = async () => {
-    const file = fileInput.files[0];
-    if (!file) {
-      uploadMsg.textContent = "Please select a file first.";
-      return;
     }
 
-    uploadMsg.textContent = "Uploading...";
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
-
-      if (data.secure_url) {
-        uploadMsg.innerHTML = `✅ Upload successful! <a href="${data.secure_url}" target="_blank">View file</a>`;
-        console.log("File URL:", data.secure_url);
-      } else {
-        uploadMsg.textContent = "Upload failed. Try again.";
-      }
-    } catch (err) {
-      console.error(err);
-      uploadMsg.textContent = "Error uploading file.";
+    // Add player
+    if (addBtn) {
+      addBtn.onclick = async () => {
+        const name = (nameEl?.value || '').trim();
+        if (!name) return showMsg('Enter a name', false);
+        try {
+          const res = await fetch(`${BASE}/api/player`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            showMsg(`Added ${name} ✅`, true);
+            if (nameEl) nameEl.value = '';
+            await refresh();
+            currentPlayer = name;
+            renderAnalysis(name);
+          } else {
+            showMsg(data.error || 'Could not add player', false);
+          }
+        } catch (e) {
+          console.error('[BK] add error', e);
+          showMsg('Network error', false);
+        }
+      };
     }
-  };
-}
 
+    if (refreshBtn) refreshBtn.onclick = refresh;
+    refresh(); // initial load
+
+    // ====== CLOUDINARY UPLOAD (direct) ======
+    if (uploadBtn && fileInput) {
+      uploadBtn.onclick = async () => {
+        const file = fileInput.files?.[0];
+        if (!currentPlayer) { if (uploadMsg) uploadMsg.textContent = 'Pick a player first.'; return; }
+        if (!file) { if (uploadMsg) uploadMsg.textContent = 'Choose a video first.'; return; }
+
+        if (uploadMsg) uploadMsg.textContent = 'Uploading…';
+        try {
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('upload_preset', UPLOAD_PRESET);
+
+          const up = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+            method: 'POST',
+            body: fd
+          });
+          const j = await up.json();
+          if (j.secure_url) {
+            if (uploadMsg) uploadMsg.textContent = '✅ Upload complete!';
+            if (previewPlayer && videoPreview) {
+              previewPlayer.src = j.secure_url;
+              videoPreview.style.display = 'block';
+            }
+          } else {
+            if (uploadMsg) uploadMsg.textContent = 'Upload failed.';
+            console.error('[BK] cloudinary error', j);
+          }
+        } catch (e) {
+          console.error('[BK] upload error', e);
+          if (uploadMsg) uploadMsg.textContent = 'Network error.';
+        }
+      };
+    }
+  });
+})();
+ 
   // ================== HOOK REFRESH + FIRST LOAD ==================
   if (refreshBtn) refreshBtn.onclick = refresh;
   refresh();
