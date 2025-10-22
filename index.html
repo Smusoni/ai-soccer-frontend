@@ -169,6 +169,17 @@
   <button id="saveAttrs" style="margin-top:10px">Save attributes</button>
   <p id="attrMsg" class="muted" style="margin-top:6px"></p>
 </div>
+  <!-- === Upload Video Clip === -->
+<div class="row" style="margin-top:12px">
+  <input id="clipFile" type="file" accept="video/*" />
+  <button id="uploadBtn">Upload clip</button>
+</div>
+<p id="uploadMsg" class="muted" style="margin-top:6px"></p>
+<!-- Optional video preview -->
+<div id="videoPreview" style="display:none; margin-top:10px;">
+  <h4>Uploaded Clip Preview:</h4>
+  <video id="previewPlayer" controls width="320"></video>
+</div>
   <!-- Upload Footage Card -->
 <div class="card" id="uploadCard">
   <h3>Upload Player Footage</h3>
@@ -354,6 +365,49 @@ function showAttrCardFor(player) {
     // === CLOUDINARY DIRECT UPLOAD ===
 const CLOUD_NAME = "dblconpx8";
 const UPLOAD_PRESET = "ballknowledge_unsigned";
+    
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('clipFile');
+const uploadMsg = document.getElementById('uploadMsg');
+const videoPreview = document.getElementById('videoPreview');
+const previewPlayer = document.getElementById('previewPlayer');
+
+if (uploadBtn && fileInput) {
+  uploadBtn.onclick = async () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      uploadMsg.textContent = "Please select a video first.";
+      return;
+    }
+
+    uploadMsg.textContent = "Uploading...";
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.secure_url) {
+        uploadMsg.textContent = "✅ Upload complete!";
+        console.log("Video URL:", data.secure_url);
+
+        // show the video preview
+        previewPlayer.src = data.secure_url;
+        videoPreview.style.display = "block";
+      } else {
+        uploadMsg.textContent = "❌ Upload failed. Try again.";
+      }
+    } catch (err) {
+      uploadMsg.textContent = "⚠ Error uploading.";
+      console.error(err);
+    }
+  };
+}
 
 const uploadBtn = document.getElementById('uploadBtn');
 const fileInput = document.getElementById('fileInput');
