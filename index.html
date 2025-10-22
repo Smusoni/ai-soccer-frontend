@@ -177,6 +177,14 @@
   <button id="uploadBtn">Upload</button>
   <p id="uploadMsg" class="muted"></p>
 </div>
+  <!-- Upload Player Clip -->
+<div class="card" id="uploadCard" style="display:none; margin-top:12px;">
+  <h3>Upload Player Clip</h3>
+  <input id="clipFile" type="file" accept="video/*" />
+  <button id="uploadBtn">Upload clip</button>
+  <p id="uploadMsg" class="muted" style="margin-top:6px;"></p>
+</div>
+
 
   <script>
   // ================== CONFIG ==================
@@ -337,6 +345,7 @@ function showAttrCardFor(player) {
     try { renderAnalysis(currentPlayer); } catch {}
   };
 })();
+  
     // === CLOUDINARY DIRECT UPLOAD ===
 const CLOUD_NAME = "dblconpx8";
 const UPLOAD_PRESET = "ballknowledge_unsigned";
