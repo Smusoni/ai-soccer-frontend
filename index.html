@@ -169,6 +169,14 @@
   <button id="saveAttrs" style="margin-top:10px">Save attributes</button>
   <p id="attrMsg" class="muted" style="margin-top:6px"></p>
 </div>
+  <!-- Upload Footage Card -->
+<div class="card" id="uploadCard">
+  <h3>Upload Player Footage</h3>
+  <p class="muted">Upload a short clip (max 60s). Accepted formats: MP4, MOV, WEBM.</p>
+  <input type="file" id="fileInput" accept="video/*,image/*">
+  <button id="uploadBtn">Upload</button>
+  <p id="uploadMsg" class="muted"></p>
+</div>
 
   <script>
   // ================== CONFIG ==================
@@ -329,6 +337,47 @@ function showAttrCardFor(player) {
     try { renderAnalysis(currentPlayer); } catch {}
   };
 })();
+    // === CLOUDINARY DIRECT UPLOAD ===
+const CLOUD_NAME = "dblconpx8";
+const UPLOAD_PRESET = "ballknowledge_unsigned";
+
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('fileInput');
+const uploadMsg = document.getElementById('uploadMsg');
+
+if (uploadBtn) {
+  uploadBtn.onclick = async () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      uploadMsg.textContent = "Please select a file first.";
+      return;
+    }
+
+    uploadMsg.textContent = "Uploading...";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+
+      if (data.secure_url) {
+        uploadMsg.innerHTML = `✅ Upload successful! <a href="${data.secure_url}" target="_blank">View file</a>`;
+        console.log("File URL:", data.secure_url);
+      } else {
+        uploadMsg.textContent = "Upload failed. Try again.";
+      }
+    } catch (err) {
+      console.error(err);
+      uploadMsg.textContent = "Error uploading file.";
+    }
+  };
+}
 
   // ================== HOOK REFRESH + FIRST LOAD ==================
   if (refreshBtn) refreshBtn.onclick = refresh;
