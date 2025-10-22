@@ -156,6 +156,19 @@
 
   <button id="refreshAnalysis" style="margin-top:12px">Re-run Analysis</button>
 </div>
+  <!-- Attributes Card -->
+<div class="card" id="attrCard" style="display:none;">
+  <h3>Attributes</h3>
+  <p class="muted">Adjust your current self-rating (0–100). Saved on this device for now.</p>
+
+  <label>Pace <input type="range" id="attrPace" min="0" max="100" value="60" oninput="attrPaceVal.textContent=this.value"> <strong id="attrPaceVal">60</strong></label><br>
+  <label>Technique <input type="range" id="attrTech" min="0" max="100" value="60" oninput="attrTechVal.textContent=this.value"> <strong id="attrTechVal">60</strong></label><br>
+  <label>Awareness <input type="range" id="attrAware" min="0" max="100" value="60" oninput="attrAwareVal.textContent=this.value"> <strong id="attrAwareVal">60</strong></label><br>
+  <label>Composure <input type="range" id="attrComp" min="0" max="100" value="60" oninput="attrCompVal.textContent=this.value"> <strong id="attrCompVal">60</strong></label><br>
+
+  <button id="saveAttrs" style="margin-top:10px">Save attributes</button>
+  <p id="attrMsg" class="muted" style="margin-top:6px"></p>
+</div>
 
   <script>
   // ================== CONFIG ==================
@@ -236,7 +249,7 @@
         const li = document.createElement('li');
         li.textContent = p;
         li.style.cursor = 'pointer';
-        li.onclick = () => { renderAnalysis(p); safeLoadProfile(p); };
+        li.onclick = () => { renderAnalysis(p); safeLoadProfile(p); showAttrCardFor(p); };
         listEl.appendChild(li);
       });
     } catch (e) {
@@ -276,6 +289,46 @@
       }
     };
   }
+    // --- simple per-player storage (localStorage for now)
+function attrKey(player) { return `BK_ATTR_${player}`; }
+
+function loadAttrs(player) {
+  try { return JSON.parse(localStorage.getItem(attrKey(player))) || null; }
+  catch { return null; }
+}
+
+function saveAttrs(player, attrs) {
+  localStorage.setItem(attrKey(player), JSON.stringify(attrs));
+}
+
+// Show/seed the card when a player is selected
+function showAttrCardFor(player) {
+  const card = document.getElementById('attrCard');
+  if (!card) return;
+  card.style.display = 'block';
+  const preset = loadAttrs(player) || { pace:60, tech:60, aware:60, comp:60 };
+  const $ = id => document.getElementById(id);
+  const set = (id, valId, v) => { $(id).value = v; $(valId).textContent = v; };
+  set('attrPace','attrPaceVal', preset.pace);
+  set('attrTech','attrTechVal', preset.tech);
+  set('attrAware','attrAwareVal', preset.aware);
+  set('attrComp','attrCompVal', preset.comp);
+}
+
+// Hook Save button once
+(function () {
+  const btn = document.getElementById('saveAttrs');
+  if (!btn) return;
+  btn.onclick = () => {
+    if (!currentPlayer) { document.getElementById('attrMsg').textContent = 'Pick a player first.'; return; }
+    const get = id => Number(document.getElementById(id).value || 0);
+    const attrs = { pace:get('attrPace'), tech:get('attrTech'), aware:get('attrAware'), comp:get('attrComp') };
+    saveAttrs(currentPlayer, attrs);
+    document.getElementById('attrMsg').textContent = 'Saved ✅';
+    // (optional) nudge the analysis to reflect attributes a bit
+    try { renderAnalysis(currentPlayer); } catch {}
+  };
+})();
 
   // ================== HOOK REFRESH + FIRST LOAD ==================
   if (refreshBtn) refreshBtn.onclick = refresh;
