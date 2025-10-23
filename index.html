@@ -169,6 +169,12 @@
   <button id="saveAttrs" style="margin-top:10px">Save attributes</button>
   <p id="attrMsg" class="muted" style="margin-top:6px"></p>
 </div>
+  <!-- Clips Card -->
+<div class="card" id="clipsCard" style="display:none;">
+  <h3>Clips</h3>
+  <p class="muted">Uploaded clips for the selected player.</p>
+  <ul id="clipList"></ul>
+</div>
   <!-- === Upload Video Clip === -->
 <div class="row" style="margin-top:12px">
   <input id="clipFile" type="file" accept="video/*" />
@@ -289,10 +295,9 @@ async function refresh() {
       li.style.cursor = 'pointer';
 
       li.onclick = () => {
-        currentPlayer = p;
-        renderAnalysis(p);
-        if (attrCard) attrCard.style.display = 'block';
-      };
+  const name = typeof p === 'string' ? p : p.name;
+  loadProfile(name);   // fetch attrs + clips, then renderAnalysis
+};
 
       listEl.appendChild(li);
     });
@@ -319,6 +324,7 @@ async function refresh() {
             showMsg(`Added ${name} ✅`, true);
             if (nameEl) nameEl.value = '';
             await refresh();
+            await loadprofile(name);
             currentPlayer = name;
             renderAnalysis(name);
           } else {
@@ -370,6 +376,69 @@ async function refresh() {
     }
   });
 })();
+  // ================== PROFILE HELPERS ==================
+function setAttrUI(attrs = {}) {
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (el) el.value = Number(v ?? 0);
+  };
+  set('attrPace',  attrs.pace);
+  set('attrTech',  attrs.tech);
+  set('attrAware', attrs.aware);
+  set('attrComp',  attrs.comp);
+}
+
+function showClips(clips = []) {
+  const card = document.getElementById('clipsCard');
+  const ul   = document.getElementById('clipList');
+  if (!ul) return;
+
+  ul.innerHTML = '';
+  if (!clips.length) {
+    ul.innerHTML = '<li class="muted">No clips yet.</li>';
+  } else {
+    clips.forEach(c => {
+      const li = document.createElement('li');
+      const when = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+      li.innerHTML = `<a href="${c.url}" target="_blank" rel="noopener">${c.public_id || 'clip'}</a> <span class="muted">${when}</span>`;
+      ul.appendChild(li);
+    });
+  }
+  if (card) card.style.display = 'block';
+}
+
+async function loadProfile(name) {
+  try {
+    showMsg(`Loading ${name}…`, true);
+    const res = await fetch(`${BASE}/api/player/${encodeURIComponent(name)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json(); // { ok, player: { name, attrs, clips } }
+
+    if (!data || !data.player) {
+      showMsg('Player not found', false);
+      return;
+    }
+
+    // keep full player object
+    currentPlayer = data.player;
+
+    // fill sliders
+    if (currentPlayer.attrs) setAttrUI(currentPlayer.attrs);
+
+    // show clips
+    showClips(currentPlayer.clips || []);
+
+    // reveal cards + render analysis
+    try { renderAnalysis(currentPlayer); } catch {}
+    if (typeof analysisCard !== 'undefined' && analysisCard) analysisCard.style.display = 'block';
+    if (typeof attrCard !== 'undefined' && attrCard)       attrCard.style.display       = 'block';
+
+    showMsg(`Loaded ${currentPlayer.name}`, true);
+  } catch (e) {
+    console.error('[BK] loadProfile error', e);
+    showMsg('Could not load profile', false);
+  }
+}
  
   // ================== HOOK REFRESH + FIRST LOAD ==================
   if (refreshBtn) refreshBtn.onclick = refresh;
