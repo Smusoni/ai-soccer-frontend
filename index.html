@@ -439,6 +439,34 @@ async function loadProfile(name) {
     showMsg('Could not load profile', false);
   }
 }
+  (function () {
+  const btn = document.getElementById('saveAttrs');
+  if (!btn) return;
+
+  btn.onclick = async () => {
+    const msg = document.getElementById('attrMsg');
+    if (!currentPlayer) {
+      if (msg) msg.textContent = 'Pick a player first';
+      return;
+    }
+    const get = id => Number(document.getElementById(id).value || 0);
+    const attrs = { pace:get('attrPace'), tech:get('attrTech'), aware:get('attrAware'), comp:get('attrComp') };
+
+    try {
+      await fetch(`${BASE}/api/player/${encodeURIComponent(currentPlayer.name)}/attrs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(attrs)
+      });
+      if (msg) msg.textContent = 'Saved ✅';
+
+      currentPlayer = { ...currentPlayer, attrs };
+      try { renderAnalysis(currentPlayer); } catch {}
+    } catch {
+      if (msg) msg.textContent = 'Save failed';
+    }
+  };
+})();
  
   // ================== HOOK REFRESH + FIRST LOAD ==================
   if (refreshBtn) refreshBtn.onclick = refresh;
