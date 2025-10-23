@@ -212,6 +212,9 @@
 const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
 const CLOUD_NAME = "dblconpx8";
 const UPLOAD_PRESET = "ballknowledge_unsigned";
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('clipFile');
+const uploadMsg = document.getElementById('uploadMsg');
 
 (function () {
   // ====== NUKE THE SPLASH (robust) ======
@@ -443,30 +446,63 @@ async function loadProfile(name) {
   const btn = document.getElementById('saveAttrs');
   if (!btn) return;
 
-  btn.onclick = async () => {
-    const msg = document.getElementById('attrMsg');
-    if (!currentPlayer) {
-      if (msg) msg.textContent = 'Pick a player first';
-      return;
-    }
-    const get = id => Number(document.getElementById(id).value || 0);
-    const attrs = { pace:get('attrPace'), tech:get('attrTech'), aware:get('attrAware'), comp:get('attrComp') };
+ uploadBtn.onclick = async () => {
+  // You must click a player in the list first (that sets currentPlayer)
+  if (!currentPlayer || !currentPlayer.name) {
+    return showMsg('Pick a player first', false);
+  }
 
-    try {
-      await fetch(`${BASE}/api/player/${encodeURIComponent(currentPlayer.name)}/attrs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(attrs)
-      });
-      if (msg) msg.textContent = 'Saved ✅';
+  // Make sure a file is chosen
+  const f = fileInput?.files?.[0];
+  if (!f) return showMsg('Choose a video file', false);
 
-      currentPlayer = { ...currentPlayer, attrs };
-      try { renderAnalysis(currentPlayer); } catch {}
-    } catch {
-      if (msg) msg.textContent = 'Save failed';
+  if (uploadMsg) uploadMsg.textContent = 'Uploading…';
+
+  try {
+    // 1) Upload to Cloudinary (unsigned)
+    const form = new FormData();
+    form.append('file', f);
+    form.append('upload_preset', UPLOAD_PRESET);
+
+    const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+      method: 'POST',
+      body: form
+    });
+    const j = await cloudRes.json();
+    if (j.error) throw new Error(j.error?.message || 'Cloudinary error');
+
+    // Helpful log while testing
+    console.log('[BK] cloudinary uploaded', j.secure_url);
+
+    // 2) Tell backend to attach this clip to the player
+    const saveRes = await fetch(`${BASE}/api/player/${encodeURIComponent(currentPlayer.name)}/clips`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // server.js expects: { url, public_id, created_at }
+      body: JSON.stringify({
+        url: j.secure_url,
+        public_id: j.public_id,
+        created_at: j.created_at || Date.now()
+      }),
+      cache: 'no-store'
+    });
+
+    if (!saveRes.ok) {
+      const t = await saveRes.text();
+      throw new Error(`Backend save failed: ${t}`);
     }
-  };
-})();
+
+    if (uploadMsg) uploadMsg.textContent = 'Uploaded ✅';
+
+    // 3) Reload profile so the clip appears in UI
+    await loadProfile(currentPlayer.name);
+
+  } catch (e) {
+    console.error('[BK] upload flow error', e);
+    if (uploadMsg) uploadMsg.textContent = 'Upload failed';
+    showMsg('Upload failed', false);
+  }
+};
  
   // ================== HOOK REFRESH + FIRST LOAD ==================
   if (refreshBtn) refreshBtn.onclick = refresh;
