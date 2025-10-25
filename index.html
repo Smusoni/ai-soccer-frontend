@@ -271,41 +271,55 @@ const uploadMsg = document.getElementById('uploadMsg');
       analysisResult.innerHTML = rows.map(([k,v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('');
     }
     
-// Refresh list
+    // Refresh list (robust)
 async function refresh() {
   try {
     if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
-    const res = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
+
+    // add a cache-buster & explicit no-store
+    const url = `${BASE}/api/players?t=${Date.now()}`;
+    const res = await fetch(url, { cache: 'no-store' });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    }
+
+    // Handle both {players: [...] } and just [...]
     const data = await res.json();
+    const players = Array.isArray(data) ? data : (data.players || []);
 
     if (!listEl) return;
     listEl.innerHTML = '';
 
-    const players = data.players || [];
     if (!players.length) {
       listEl.innerHTML = '<li class="muted">No players yet.</li>';
       return;
     }
 
     players.forEach(p => {
+      const name = typeof p === 'string' ? p : (p.name || '');
+      const rating = typeof p === 'string' ? 'N/A' : (p.rating ?? 'N/A');
+
       const li = document.createElement('li');
-      li.textContent = `${p.name || p} – ⚡ Rating: ${p.rating || 'N/A'}`;
+      li.textContent = `${name} – ⚡ Rating: ${rating}`;
       li.style.cursor = 'pointer';
 
       li.onclick = () => {
-        const name = typeof p === 'string' ? p : p.name;
-        loadProfile(name); // fetch attrs + clips, then renderAnalysis
+        if (!name) return;
+        // your existing function that loads attrs & clips and then calls renderAnalysis
+        loadProfile(name);
       };
 
       listEl.appendChild(li);
     });
   } catch (err) {
     console.error('[BallKnowledge] refresh error:', err);
-    listEl.innerHTML =
-      '<li class="error">⚠️ Failed to load players. Server may be offline.</li>';
+    if (listEl) {
+      listEl.innerHTML =
+        '<li class="error">⚠️ Failed to load players. Server may be offline.</li>';
+    }
   }
 }
-
     // Add player
     if (addBtn) {
       addBtn.onclick = async () => {
