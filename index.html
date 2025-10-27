@@ -512,12 +512,47 @@ async function loadProfile(name) {
     showMsg('Upload failed', false);
   }
 };
- 
-  // ================== HOOK REFRESH + FIRST LOAD ==================
-  if (refreshBtn) refreshBtn.onclick = refresh;
-  refresh();
-  }
-</script>
+ // ================= HOOK REFRESH + FIRST LOAD =================
+if (refreshBtn) refreshBtn.onclick = refresh;
+refresh(); // initial load
 
+
+/* --- Splash failsafe: hide even if JS crashes --- */
+window.addEventListener('error', (e) => console.error('[BK FrontError]', e));
+setTimeout(() => {
+  const s = document.getElementById('splash');
+  if (s) s.classList.add('hide');
+  setTimeout(() => s?.remove(), 600);
+}, 2500);
+
+
+/* ======= CLOUDINARY UPLOAD (direct) ======= */
+(function () {
+  const uploadBtn = document.getElementById('uploadBtn');
+  const fileInput = document.getElementById('clipFile');
+  const uploadMsgEl = document.getElementById('uploadMsg');
+
+  function uploadMsg(t) { if (uploadMsgEl) uploadMsgEl.textContent = t; }
+
+  if (!uploadBtn || !fileInput) return;
+
+  uploadBtn.onclick = async () => {
+    try {
+      const file = fileInput.files?.[0];
+      if (!file) { uploadMsg('Choose a video first'); return; }
+      if (typeof currentPlayer === 'undefined' || !currentPlayer) {
+        uploadMsg('Pick a player first'); return;
+      }
+
+      // Placeholder message for now (real upload coming later)
+      uploadMsg('Uploaded ✅ (placeholder)');
+
+    } catch (e) {
+      console.error('[BK] upload error', e);
+      uploadMsg('Network error');
+    }
+  };
+})();
+</script>
 </body>
 </html>
