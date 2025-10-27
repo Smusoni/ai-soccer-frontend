@@ -208,110 +208,92 @@
 </div>
 
 <script>
-// ====== CONFIG ======
+// ========================== CONFIG ==========================
 const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
-const CLOUD_NAME = "dblconpx8";
-const UPLOAD_PRESET = "ballknowledge_unsigned";
-const uploadBtn = document.getElementById('uploadBtn');
-const fileInput = document.getElementById('clipFile');
-const uploadMsg = document.getElementById('uploadMsg');
 
-(function () {
-  // ====== NUKE THE SPLASH (robust) ======
-  function killSplash() {
-    const s = document.getElementById('splash');
-    if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 400); }
-  }
-  window.addEventListener('load', () => setTimeout(killSplash, 800));
-  document.addEventListener('DOMContentLoaded', () => setTimeout(killSplash, 1600));
-  setTimeout(killSplash, 4000); // last resort
+// ========================== ELEMENTS =========================
+const $ = (id) => document.getElementById(id);
 
-  // ====== BOOT ON DOM READY ======
-  document.addEventListener('DOMContentLoaded', () => {
-    const $ = id => document.getElementById(id);
+const nameEl          = $('name');
+const addBtn          = $('addBtn');
+const msgEl           = $('msg');
 
-    // Elements
-    const nameEl = $('name');
-    const addBtn = $('addBtn');
-    const msgEl = $('msg');
-    const refreshBtn = $('refresh');
-    const listEl = $('list');
-    const analysisCard = $('analysisCard');
-    const analysisResult = $('analysisResult');
+const refreshBtn      = $('refresh');
+const listEl          = $('list');
 
-    const attrCard = $('attrCard');
-    const uploadCard = $('uploadCard');
-    const uploadBtn = $('uploadBtn');
-    const fileInput = $('clipFile');
-    const uploadMsg = $('uploadMsg');
-    const videoPreview = $('videoPreview');
-    const previewPlayer = $('previewPlayer');
+const analysisCard    = $('analysisCard');
+const analysisResult  = $('analysisResult');
 
-    let currentPlayer = null;
+const attrCard        = $('attrCard');        // ok if null (optional UI)
+const uploadCard      = $('uploadCard');      // ok if null
+const uploadBtn       = $('uploadBtn');       // ok if null
+const fileInput       = $('clipFile');        // ok if null
+const uploadMsgEl     = $('uploadMsg');       // ok if null
 
-    // Helpers
-    const showMsg = (text, ok = true) => {
-      if (!msgEl) return;
-      msgEl.textContent = text;
-      msgEl.className = ok ? 'ok' : 'error';
-    };
+let currentPlayer = null;
 
-    // Analysis (mock)
-    async function renderAnalysis(playerName) {
-      if (!analysisCard || !analysisResult) return;
-      analysisCard.style.display = 'block';
-      analysisResult.innerHTML = `<p class="muted">Analyzing <strong>${playerName}</strong>…</p>`;
-      await new Promise(r => setTimeout(r, 900));
-      const rows = [
-        ['Top Skill','Speed & Awareness'],
-        ['Needs Work','Composure under pressure'],
-        ['Suggested Drill','Small-space reaction training'],
-        ['Pro Comparison','Similar to Leroy Sané']
-      ];
-      analysisResult.innerHTML = rows.map(([k,v]) => `<p><strong>${k}:</strong> ${v}</p>`).join('');
-    }
-    
-    // Refresh list (robust)
+// ========================== UI HELPERS =======================
+function showMsg(text, ok = true) {
+  if (!msgEl) return;
+  msgEl.textContent = text;
+  msgEl.className = ok ? 'ok' : 'error';
+}
+
+function analysisMsg(text) {
+  if (!analysisResult) return;
+  analysisResult.innerHTML = `<p class="muted">${text}</p>`;
+}
+
+function renderAnalysis(name) {
+  if (!analysisCard || !analysisResult) return;
+  analysisCard.style.display = 'block';
+
+  // --- simple, deterministic mock so it looks AI-ish
+  const hash = [...name].reduce((a,c)=>a+c.charCodeAt(0), 0);
+  const picks = [
+    { label: 'Top Skill',          list: ['Speed & Awareness','1v1 Dribbling','Ball Striking','Press Resistance']},
+    { label: 'Needs Work',         list: ['Composure under pressure','Weak foot','Aerial duels','Scanning']},
+    { label: 'Suggested Drill',    list: ['Small-space reaction training','Rondo 4v2','Wall passing x100','First-touch gates']},
+    { label: 'Pro Comparison',     list: ['Similar style to Leroy Sané','Similar style to Gündoğan','Similar style to Lauren James','Similar style to Pulisic']},
+  ];
+  const rows = picks.map((p,i) => {
+    const v = p.list[hash % p.list.length];
+    return `<p><strong>${p.label}:</strong> ${v}</p>`;
+  }).join('');
+
+  analysisResult.innerHTML = rows;
+}
+
+// ========================== DATA LOADERS =====================
 async function refresh() {
   try {
     if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
 
-    // add a cache-buster & explicit no-store
-    const url = `${BASE}/api/players?t=${Date.now()}`;
-    const res = await fetch(url, { cache: 'no-store' });
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    }
-
-    // Handle both {players: [...] } and just [...]
+    const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
     const data = await res.json();
-    const players = Array.isArray(data) ? data : (data.players || []);
 
     if (!listEl) return;
     listEl.innerHTML = '';
 
+    const players = data.players || [];
     if (!players.length) {
       listEl.innerHTML = '<li class="muted">No players yet.</li>';
       return;
     }
 
     players.forEach(p => {
-      const name = typeof p === 'string' ? p : (p.name || '');
-      const rating = typeof p === 'string' ? 'N/A' : (p.rating ?? 'N/A');
-
       const li = document.createElement('li');
-      li.textContent = `${name} – ⚡ Rating: ${rating}`;
+      li.textContent = typeof p === 'string' ? p : (p.name || 'Unknown');
       li.style.cursor = 'pointer';
-
       li.onclick = () => {
-        if (!name) return;
-        // your existing function that loads attrs & clips and then calls renderAnalysis
-        loadProfile(name);
+        currentPlayer = li.textContent;
+        renderAnalysis(currentPlayer);
+        if (attrCard)  attrCard.style.display  = 'block';
+        if (uploadCard) uploadCard.style.display = 'block';
       };
-
       listEl.appendChild(li);
     });
+
   } catch (err) {
     console.error('[BallKnowledge] refresh error:', err);
     if (listEl) {
@@ -320,204 +302,59 @@ async function refresh() {
     }
   }
 }
-    // Add player
-    if (addBtn) {
-      addBtn.onclick = async () => {
-        const name = (nameEl?.value || '').trim();
-        if (!name) return showMsg('Enter a name', false);
-        try {
-          const res = await fetch(`${BASE}/api/player`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
-          });
-          const data = await res.json();
-          if (data.ok) {
-            showMsg(`Added ${name} ✅`, true);
-            if (nameEl) nameEl.value = '';
-            await refresh();
-            await loadprofile(name);
-            currentPlayer = name;
-            renderAnalysis(name);
-          } else {
-            showMsg(data.error || 'Could not add player', false);
-          }
-        } catch (e) {
-          console.error('[BK] add error', e);
-          showMsg('Network error', false);
-        }
-      };
-    }
 
-    if (refreshBtn) refreshBtn.onclick = refresh;
-    refresh(); // initial load
-
-    // ====== CLOUDINARY UPLOAD (direct) ======
-    if (uploadBtn && fileInput) {
-      uploadBtn.onclick = async () => {
-        const file = fileInput.files?.[0];
-        if (!currentPlayer) { if (uploadMsg) uploadMsg.textContent = 'Pick a player first.'; return; }
-        if (!file) { if (uploadMsg) uploadMsg.textContent = 'Choose a video first.'; return; }
-
-        if (uploadMsg) uploadMsg.textContent = 'Uploading…';
-        try {
-          const fd = new FormData();
-          fd.append('file', file);
-          fd.append('upload_preset', UPLOAD_PRESET);
-
-          const up = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-            method: 'POST',
-            body: fd
-          });
-          const j = await up.json();
-          if (j.secure_url) {
-            if (uploadMsg) uploadMsg.textContent = '✅ Upload complete!';
-            if (previewPlayer && videoPreview) {
-              previewPlayer.src = j.secure_url;
-              videoPreview.style.display = 'block';
-            }
-          } else {
-            if (uploadMsg) uploadMsg.textContent = 'Upload failed.';
-            console.error('[BK] cloudinary error', j);
-          }
-        } catch (e) {
-          console.error('[BK] upload error', e);
-          if (uploadMsg) uploadMsg.textContent = 'Network error.';
-        }
-      };
-    }
-  });
-})();
-  // ================== PROFILE HELPERS ==================
-function setAttrUI(attrs = {}) {
-  const set = (id, v) => {
-    const el = document.getElementById(id);
-    if (el) el.value = Number(v ?? 0);
-  };
-  set('attrPace',  attrs.pace);
-  set('attrTech',  attrs.tech);
-  set('attrAware', attrs.aware);
-  set('attrComp',  attrs.comp);
-}
-
-function showClips(clips = []) {
-  const card = document.getElementById('clipsCard');
-  const ul   = document.getElementById('clipList');
-  if (!ul) return;
-
-  ul.innerHTML = '';
-  if (!clips.length) {
-    ul.innerHTML = '<li class="muted">No clips yet.</li>';
-  } else {
-    clips.forEach(c => {
-      const li = document.createElement('li');
-      const when = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
-      li.innerHTML = `<a href="${c.url}" target="_blank" rel="noopener">${c.public_id || 'clip'}</a> <span class="muted">${when}</span>`;
-      ul.appendChild(li);
-    });
-  }
-  if (card) card.style.display = 'block';
-}
-
-async function loadProfile(name) {
-  try {
-    showMsg(`Loading ${name}…`, true);
-    const res = await fetch(`${BASE}/api/player/${encodeURIComponent(name)}`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json(); // { ok, player: { name, attrs, clips } }
-
-    if (!data || !data.player) {
-      showMsg('Player not found', false);
-      return;
-    }
-
-    // keep full player object
-    currentPlayer = data.player;
-
-    // fill sliders
-    if (currentPlayer.attrs) setAttrUI(currentPlayer.attrs);
-
-    // show clips
-    showClips(currentPlayer.clips || []);
-
-    // reveal cards + render analysis
-    try { renderAnalysis(currentPlayer); } catch {}
-    if (typeof analysisCard !== 'undefined' && analysisCard) analysisCard.style.display = 'block';
-    if (typeof attrCard !== 'undefined' && attrCard)       attrCard.style.display       = 'block';
-
-    showMsg(`Loaded ${currentPlayer.name}`, true);
-  } catch (e) {
-    console.error('[BK] loadProfile error', e);
-    showMsg('Could not load profile', false);
-  }
-}
-  (function () {
-  const btn = document.getElementById('saveAttrs');
-  if (!btn) return;
-
- uploadBtn.onclick = async () => {
-  // You must click a player in the list first (that sets currentPlayer)
-  if (!currentPlayer || !currentPlayer.name) {
-    return showMsg('Pick a player first', false);
-  }
-
-  // Make sure a file is chosen
-  const f = fileInput?.files?.[0];
-  if (!f) return showMsg('Choose a video file', false);
-
-  if (uploadMsg) uploadMsg.textContent = 'Uploading…';
+async function addPlayer() {
+  const name = (nameEl?.value || '').trim();
+  if (!name) return showMsg('Please enter a name', false);
 
   try {
-    // 1) Upload to Cloudinary (unsigned)
-    const form = new FormData();
-    form.append('file', f);
-    form.append('upload_preset', UPLOAD_PRESET);
-
-    const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
-      method: 'POST',
-      body: form
-    });
-    const j = await cloudRes.json();
-    if (j.error) throw new Error(j.error?.message || 'Cloudinary error');
-
-    // Helpful log while testing
-    console.log('[BK] cloudinary uploaded', j.secure_url);
-
-    // 2) Tell backend to attach this clip to the player
-    const saveRes = await fetch(`${BASE}/api/player/${encodeURIComponent(currentPlayer.name)}/clips`, {
+    const res = await fetch(`${BASE}/api/player`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // server.js expects: { url, public_id, created_at }
-      body: JSON.stringify({
-        url: j.secure_url,
-        public_id: j.public_id,
-        created_at: j.created_at || Date.now()
-      }),
-      cache: 'no-store'
+      body: JSON.stringify({ name })
     });
+    const data = await res.json();
 
-    if (!saveRes.ok) {
-      const t = await saveRes.text();
-      throw new Error(`Backend save failed: ${t}`);
+    if (data.ok) {
+      showMsg(`Added ${name} ✅`, true);
+      if (nameEl) nameEl.value = '';
+      await refresh();
+      currentPlayer = name;
+      renderAnalysis(name);
+      if (attrCard)  attrCard.style.display  = 'block';
+      if (uploadCard) uploadCard.style.display = 'block';
+    } else {
+      showMsg(data.error || 'Could not add player', false);
     }
-
-    if (uploadMsg) uploadMsg.textContent = 'Uploaded ✅';
-
-    // 3) Reload profile so the clip appears in UI
-    await loadProfile(currentPlayer.name);
-
   } catch (e) {
-    console.error('[BK] upload flow error', e);
-    if (uploadMsg) uploadMsg.textContent = 'Upload failed';
-    showMsg('Upload failed', false);
+    console.error('[BallKnowledge] add error:', e);
+    showMsg('Network error', false);
   }
-};
- // ================= HOOK REFRESH + FIRST LOAD =================
-if (refreshBtn) refreshBtn.onclick = refresh;
-refresh(); // initial load
+}
 
+// ========================== CLOUDINARY (placeholder safe) ===
+// You can wire real upload later. This keeps the UI stable now.
+(function () {
+  if (!uploadBtn || !fileInput) return;
+  const say = (t) => { if (uploadMsgEl) uploadMsgEl.textContent = t; };
 
-/* --- Splash failsafe: hide even if JS crashes --- */
+  uploadBtn.onclick = async () => {
+    try {
+      if (!currentPlayer) return say('Pick a player first');
+      const f = fileInput.files?.[0];
+      if (!f) return say('Choose a video first');
+
+      // TODO: replace with real Cloudinary unsigned upload later
+      // For now just pretend it worked:
+      say('Uploaded ✅ (placeholder)');
+    } catch (e) {
+      console.error('[BallKnowledge] upload error', e);
+      say('Network error');
+    }
+  };
+})();
+
+// ========================== SPLASH FAILSAFE ==================
 window.addEventListener('error', (e) => console.error('[BK FrontError]', e));
 setTimeout(() => {
   const s = document.getElementById('splash');
@@ -525,34 +362,8 @@ setTimeout(() => {
   setTimeout(() => s?.remove(), 600);
 }, 2500);
 
-
-/* ======= CLOUDINARY UPLOAD (direct) ======= */
-(function () {
-  const uploadBtn = document.getElementById('uploadBtn');
-  const fileInput = document.getElementById('clipFile');
-  const uploadMsgEl = document.getElementById('uploadMsg');
-
-  function uploadMsg(t) { if (uploadMsgEl) uploadMsgEl.textContent = t; }
-
-  if (!uploadBtn || !fileInput) return;
-
-  uploadBtn.onclick = async () => {
-    try {
-      const file = fileInput.files?.[0];
-      if (!file) { uploadMsg('Choose a video first'); return; }
-      if (typeof currentPlayer === 'undefined' || !currentPlayer) {
-        uploadMsg('Pick a player first'); return;
-      }
-
-      // Placeholder message for now (real upload coming later)
-      uploadMsg('Uploaded ✅ (placeholder)');
-
-    } catch (e) {
-      console.error('[BK] upload error', e);
-      uploadMsg('Network error');
-    }
-  };
-})();
+// ========================== WIRE UP + FIRST LOAD ============
+if (addBtn)     addBtn.onclick     = addPlayer;
+if (refreshBtn) refreshBtn.onclick = refresh;
+refresh();
 </script>
-</body>
-</html>
