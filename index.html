@@ -231,7 +231,20 @@ const fileInput       = $('clipFile');        // ok if null
 const uploadMsgEl     = $('uploadMsg');       // ok if null
 
 let currentPlayer = null;
+  
+ // === Auth helpers (paste directly under const BASE) ===
+function setToken(t){ localStorage.setItem('bk_token', t); }
+function getToken(){ return localStorage.getItem('bk_token'); }
 
+// Generic API wrapper (auto-injects token if present)
+async function api(path, options = {}) {
+  const headers = options.headers || {};
+  const t = getToken();
+  if (t) headers['Authorization'] = `Bearer ${t}`;
+  headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  return res.json();
+} 
 // ========================== UI HELPERS =======================
 function showMsg(text, ok = true) {
   if (!msgEl) return;
@@ -330,6 +343,39 @@ async function addPlayer() {
     console.error('[BallKnowledge] add error:', e);
     showMsg('Network error', false);
   }
+}
+  async function signup(username, password){
+  const out = await api('/api/signup', {
+    method:'POST',
+    body: JSON.stringify({ username, password })
+  });
+  if (out.ok && out.token) {
+    setToken(out.token);
+    console.log('Signed up & stored token', out);
+  } else {
+    console.warn('Signup failed', out);
+  }
+}
+
+async function login(username, password){
+  const out = await api('/api/login', {
+    method:'POST',
+    body: JSON.stringify({ username, password })
+  });
+  if (out.ok && out.token) {
+    setToken(out.token);
+    console.log('Logged in & stored token', out);
+  } else {
+    console.warn('Login failed', out);
+  }
+}
+async function saveProfile({height, weight, foot, position, dob}){
+  const out = await api('/api/profile', {
+    method:'POST',
+    body: JSON.stringify({ height, weight, foot, position, dob })
+  });
+  if (!out.ok) console.warn('Profile save failed', out);
+  return out;
 }
 
 // ========================== CLOUDINARY (placeholder safe) ===
