@@ -145,6 +145,37 @@
     <button id="refresh">Refresh list</button>
     <ul id="list"></ul>
   </div>
+  <!-- Auth -->
+<div class="card" id="authCard">
+  <h3>Account</h3>
+  <div class="row">
+    <input id="username" placeholder="username" />
+    <input id="password" placeholder="password" type="password" />
+  </div>
+  <div class="row" style="gap:8px;margin-top:8px">
+    <button id="signupBtn">Sign up</button>
+    <button id="loginBtn">Log in</button>
+  </div>
+  <p id="authMsg" class="muted" style="margin-top:6px"></p>
+</div>
+
+<!-- Profile -->
+<div class="card" id="profileCard" style="display:none">
+  <h3>Player Profile</h3>
+  <div class="row">
+    <input id="height" placeholder="height (in / cm)" />
+    <input id="weight" placeholder="weight (lb / kg)" />
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="foot" placeholder="dominant foot (R/L)" />
+    <input id="position" placeholder="position (e.g. RW, CM)" />
+  </div>
+  <div class="row" style="margin-top:8px">
+    <input id="dob" placeholder="DOB (YYYY-MM-DD)" />
+    <button id="saveProfileBtn">Save profile</button>
+  </div>
+  <p id="profileMsg" class="muted" style="margin-top:6px"></p>
+</div>
   <!-- Analysis Card -->
 <div class="card" id="analysisCard" style="display:none">
   <h3>AI Analysis</h3>
@@ -229,7 +260,22 @@ const uploadCard      = $('uploadCard');      // ok if null
 const uploadBtn       = $('uploadBtn');       // ok if null
 const fileInput       = $('clipFile');        // ok if null
 const uploadMsgEl     = $('uploadMsg');       // ok if null
+// --- Auth/Profile elements ---
+const signupBtn = $('#signupBtn');
+const loginBtn = $('#loginBtn');
+const authMsg = $('#authMsg');
+const profileCard = $('#profileCard');
+const saveProfileBtn = $('#saveProfileBtn');
 
+const usernameEl = $('#username');
+const passwordEl = $('#password');
+
+const heightEl = $('#height');
+const weightEl = $('#weight');
+const footEl = $('#foot');
+const positionEl = $('#position');
+const dobEl = $('#dob');
+  
 let currentPlayer = null;
   
  // === Auth helpers (paste directly under const BASE) ===
@@ -407,9 +453,53 @@ setTimeout(() => {
   if (s) s.classList.add('hide');
   setTimeout(() => s?.remove(), 600);
 }, 2500);
+  
+  if (signupBtn) {
+  signupBtn.onclick = async () => {
+    const username = usernameEl?.value?.trim();
+    const password = passwordEl?.value ?? '';
+    authMsg.textContent = 'Signing up...';
+    const out = await signup(username, password);
+    authMsg.textContent = out.ok ? 'Signed up ✅' : (out.error || 'Signup failed');
+    if (out.ok) {
+      // show profile card after getting token
+      if (profileCard) profileCard.style.display = 'block';
+    }
+  };
+}
+
+if (loginBtn) {
+  loginBtn.onclick = async () => {
+    const username = usernameEl?.value?.trim();
+    const password = passwordEl?.value ?? '';
+    authMsg.textContent = 'Logging in...';
+    const out = await login(username, password);
+    authMsg.textContent = out.ok ? 'Logged in ✅' : (out.error || 'Login failed');
+    if (out.ok && profileCard) profileCard.style.display = 'block';
+  };
+}
+
+if (saveProfileBtn) {
+  saveProfileBtn.onclick = async () => {
+    const payload = {
+      height: heightEl?.value?.trim(),
+      weight: weightEl?.value?.trim(),
+      foot: footEl?.value?.trim(),
+      position: positionEl?.value?.trim(),
+      dob: dobEl?.value?.trim(),
+    };
+    const out = await saveProfile(payload);
+    const msg = out.ok ? 'Profile saved ✅' : (out.error || 'Profile save failed');
+    const el = $('#profileMsg'); if (el) el.textContent = msg;
+  };
+}
 
 // ========================== WIRE UP + FIRST LOAD ============
 if (addBtn)     addBtn.onclick     = addPlayer;
 if (refreshBtn) refreshBtn.onclick = refresh;
 refresh();
+  // If user already logged in previously, reveal the profile card
+try {
+  if (getToken() && profileCard) profileCard.style.display = 'block';
+} catch {}
 </script>
