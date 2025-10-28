@@ -130,6 +130,7 @@
   <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo" class="logo">
 <h1>Ball Knowledge</h1>
 <p class="muted">Analyze. Learn. Evolve.</p>
+  <p id="welcomeMsg" class="muted"></p>
    <!-- AUTH CARD -->
 <div class="card" id="authCard">
   <h3>Account</h3>
@@ -491,5 +492,24 @@ refresh();
   // If user already logged in previously, reveal the profile card
 try {
   if (getToken() && profileCard) profileCard.style.display = 'block';
-} catch {}
+} 
+  // === Show username after login ===
+async function showWelcome() {
+  const t = getToken();
+  if (!t) return;
+
+  try {
+    const res = await api('/api/me');
+    if (res.ok && res.user) {
+      const el = document.querySelector('#welcomeMsg');
+      if (el) el.textContent = `Welcome, ${res.user.username}!`;
+    }
+  } catch (e) {
+    console.warn('[Welcome] Could not load user info:', e);
+  }
+}
+
+// Call when page loads
+showWelcome();
+catch {}
 </script>
