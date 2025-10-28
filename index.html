@@ -485,31 +485,48 @@ if (saveProfileBtn) {
   };
 }
 
-// ========================== WIRE UP + FIRST LOAD ============
-if (addBtn)     addBtn.onclick     = addPlayer;
-if (refreshBtn) refreshBtn.onclick = refresh;
-refresh();
-  // If user already logged in previously, reveal the profile card
-try {
-  if (getToken() && profileCard) profileCard.style.display = 'block';
-} 
-  // === Show username after login ===
-async function showWelcome() {
-  const t = getToken();
-  if (!t) return;
+<!-- keep everything above this line; replace your tail section with this -->
 
+// =================== WIRE UP + FIRST LOAD =============
+if (typeof addPlayer === 'function' && addBtn) {
+  addBtn.onclick = addPlayer;
+}
+if (typeof refresh === 'function' && refreshBtn) {
+  refreshBtn.onclick = refresh;
+}
+if (typeof refresh === 'function') {
+  refresh(); // initial load
+}
+
+// === Show username after login ===
+async function showWelcome() {
   try {
+    const t = getToken && getToken();
+    if (!t) return;
+
     const res = await api('/api/me');
-    if (res.ok && res.user) {
+    if (res && res.ok && res.user) {
       const el = document.querySelector('#welcomeMsg');
       if (el) el.textContent = `Welcome, ${res.user.username}!`;
+      // If user already logged in, reveal profile card
+      const profileCard = document.getElementById('profileCard');
+      if (profileCard) profileCard.style.display = 'block';
     }
   } catch (e) {
     console.warn('[Welcome] Could not load user info:', e);
   }
 }
-
-// Call when page loads
 showWelcome();
-  }catch {}
+
+// =================== SPLASH FAILSAFE ===================
+window.addEventListener('error', (e) => {
+  console.error('[BK FrontError]', e);
+});
+setTimeout(() => {
+  try {
+    const s = document.getElementById('splash');
+    if (s) s.classList.add('hide');
+    setTimeout(() => { try { s?.remove(); } catch(_){} }, 600);
+  } catch(_) {}
+}, 2500);
 </script>
