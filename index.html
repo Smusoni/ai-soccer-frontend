@@ -145,36 +145,25 @@
     <button id="refresh">Refresh list</button>
     <ul id="list"></ul>
   </div>
-  <!-- Auth -->
+ <!-- AUTH CARD -->
 <div class="card" id="authCard">
   <h3>Account</h3>
-  <div class="row">
-    <input id="username" placeholder="username" />
-    <input id="password" placeholder="password" type="password" />
-  </div>
-  <div class="row" style="gap:8px;margin-top:8px">
-    <button id="signupBtn">Sign up</button>
-    <button id="loginBtn">Log in</button>
-  </div>
-  <p id="authMsg" class="muted" style="margin-top:6px"></p>
+  <input id="username" type="text" placeholder="Username" />
+  <input id="password" type="password" placeholder="Password" />
+  <button id="signupBtn">Sign Up</button>
+  <button id="loginBtn">Login</button>
+  <p id="authMsg" class="muted"></p>
 </div>
-
-<!-- Profile -->
+<!-- PROFILE CARD -->
 <div class="card" id="profileCard" style="display:none">
   <h3>Player Profile</h3>
-  <div class="row">
-    <input id="height" placeholder="height (in / cm)" />
-    <input id="weight" placeholder="weight (lb / kg)" />
-  </div>
-  <div class="row" style="margin-top:8px">
-    <input id="foot" placeholder="dominant foot (R/L)" />
-    <input id="position" placeholder="position (e.g. RW, CM)" />
-  </div>
-  <div class="row" style="margin-top:8px">
-    <input id="dob" placeholder="DOB (YYYY-MM-DD)" />
-    <button id="saveProfileBtn">Save profile</button>
-  </div>
-  <p id="profileMsg" class="muted" style="margin-top:6px"></p>
+  <input id="height" type="number" placeholder="Height (cm)" />
+  <input id="weight" type="number" placeholder="Weight (kg)" />
+  <input id="foot" type="text" placeholder="Dominant Foot" />
+  <input id="position" type="text" placeholder="Position" />
+  <input id="dob" type="date" placeholder="Date of Birth" />
+  <button id="saveProfileBtn">Save Profile</button>
+  <p id="profileMsg" class="muted"></p>
 </div>
   <!-- Analysis Card -->
 <div class="card" id="analysisCard" style="display:none">
