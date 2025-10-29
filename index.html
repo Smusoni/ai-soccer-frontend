@@ -126,7 +126,40 @@
   <p>Initializing AI… connecting to server</p>
   <div class="spinner"></div>
 </div>
+<!-- ======================= HERO (LOGGED-OUT) ======================= -->
+<div id="hero" class="card" style="max-width:900px;margin:0 auto 16px; text-align:center; display:none;">
+  <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge" style="height:64px;margin-bottom:8px">
+  <h1 style="margin:8px 0 4px">Ball Knowledge</h1>
+  <p class="muted" style="margin:0 0 16px">
+    Upload match clips → AI breaks down your game → drills & pro comps tailored to you.
+  </p>
 
+  <div id="authCard" class="card" style="max-width:720px;margin:12px auto 0;text-align:left">
+    <h3>Sign in / Sign up</h3>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <input id="username" placeholder="Username" style="min-width:200px">
+      <input id="password" type="password" placeholder="Password" style="min-width:200px">
+      <button id="loginBtn">Login</button>
+      <button id="signupBtn">Sign Up</button>
+    </div>
+    <p id="authMsg" class="muted" style="margin-top:6px"></p>
+  </div>
+
+  <div class="card" style="max-width:720px;margin:12px auto 0;text-align:left">
+    <h3>What you’ll get</h3>
+    <ul style="margin-left:16px">
+      <li>Instant report: <em>Top skill, Needs work</em>, and <em>Suggested drills</em></li>
+      <li>Smart <em>pro comparisons</em> that match your style</li>
+      <li>Save your <em>profile (height, weight, foot, position, DOB)</em> for better recs</li>
+      <li>History of analyses to track progress</li>
+    </ul>
+  </div>
+</div>
+<!-- ===================== WELCOME BAR (LOGGED-IN) =================== -->
+<div id="welcomeBar" class="card" style="display:none; max-width:900px; margin:0 auto 8px;">
+  <span id="welcomeText">Welcome!</span>
+  <button id="logoutBtn" style="float:right">Logout</button>
+</div>
   <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo" class="logo">
 <h1>Ball Knowledge</h1>
 <p class="muted">Analyze. Learn. Evolve.</p>
@@ -166,6 +199,8 @@
     <button id="refresh">Refresh list</button>
     <ul id="list"></ul>
   </div>
+  <!-- ======================= DASHBOARD (LOGGED-IN) ====================== -->
+<div id="dashboard" style="display:none">
   <!-- Analysis Card -->
 <div class="card" id="analysisCard" style="display:none">
   <h3>AI Analysis</h3>
@@ -227,6 +262,8 @@
   <h4>Uploaded Clip Preview:</h4>
   <video id="previewPlayer" controls width="320" height="240" style="border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.2);"></video>
 </div>
+  
+</div> <!-- end #dashboard -->
 
 <script>
 // ========================== CONFIG ==========================
@@ -268,6 +305,52 @@ const positionEl = $('#position');
 const dobEl = $('#dob');
   
 let currentPlayer = null;
+  // === Landing vs Dashboard toggles ===
+const hero        = $('#hero');
+const dashboard   = $('#dashboard');
+const welcomeBar  = $('#welcomeBar');
+const welcomeText = $('#welcomeText');
+
+const loginBtn    = $('#loginBtn');
+const signupBtn   = $('#signupBtn');
+const logoutBtn   = $('#logoutBtn');
+
+const usernameEl  = $('#username');
+const passwordEl  = $('#password');
+
+function showLoggedOut() {
+  if (hero)       hero.style.display       = 'block';
+  if (dashboard)  dashboard.style.display  = 'none';
+  if (welcomeBar) welcomeBar.style.display = 'none';
+}
+
+function showLoggedIn(name) {
+  if (hero)       hero.style.display       = 'none';
+  if (dashboard)  dashboard.style.display  = 'block';
+  if (welcomeBar) {
+    welcomeBar.style.display = 'block';
+    if (welcomeText) welcomeText.textContent = `Welcome, ${name || 'player'}!`;
+  }
+}
+
+// Uses your existing getToken() + api() helper
+async function renderGate() {
+  const t = getToken && getToken();
+  if (!t) { showLoggedOut(); return; }
+
+  try {
+    const me = await api('/api/me');
+    if (me.ok && me.user) {
+      showLoggedIn(me.user.username);
+      try { refresh && refresh(); } catch {}
+    } else {
+      localStorage.removeItem('bk_token');
+      showLoggedOut();
+    }
+  } catch {
+    showLoggedOut();
+  }
+}
   
  // === Auth helpers (paste directly under const BASE) ===
 function setToken(t){ localStorage.setItem('bk_token', t); }
@@ -486,7 +569,46 @@ if (saveProfileBtn) {
 }
 
 <!-- keep everything above this line; replace your tail section with this -->
+// LOGIN
+if (loginBtn) loginBtn.onclick = async () => {
+  const u = usernameEl?.value?.trim();
+  const p = passwordEl?.value ?? '';
+  const out = await api('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: u, password: p })
+  });
+  const msgEl = $('#authMsg');
+  if (msgEl) msgEl.textContent = out.ok ? 'Logged in ✅' : (out.error || 'Login failed');
+  if (out.ok && out.token) {
+    setToken(out.token);
+    renderGate();
+  }
+};
 
+// SIGNUP
+if (signupBtn) signupBtn.onclick = async () => {
+  const u = usernameEl?.value?.trim();
+  const p = passwordEl?.value ?? '';
+  const msgEl = $('#authMsg');
+  if (msgEl) msgEl.textContent = 'Signing up...';
+  const out = await api('/api/signup', {
+    method: 'POST',
+    body: JSON.stringify({ username: u, password: p })
+  });
+  if (msgEl) msgEl.textContent = out.ok ? 'Signed up ✅' : (out.error || 'Signup failed');
+  if (out.ok && out.token) {
+    setToken(out.token);
+    renderGate();
+  }
+};
+  
+// LOGOUT
+if (logoutBtn) logoutBtn.onclick = () => {
+  localStorage.removeItem('bk_token');
+  if (usernameEl) usernameEl.value = '';
+  if (passwordEl) passwordEl.value = '';
+  showLoggedOut();
+};
 // =================== WIRE UP + FIRST LOAD =============
 if (typeof addPlayer === 'function' && addBtn) {
   addBtn.onclick = addPlayer;
@@ -529,4 +651,10 @@ setTimeout(() => {
     setTimeout(() => { try { s?.remove(); } catch(_){} }, 600);
   } catch(_) {}
 }, 2500);
+
+if (addBtn)      addBtn.onclick      = addPlayer;
+if (refreshBtn)  refreshBtn.onclick  = refresh;
+
+refresh();      // existing initial list fetch
+renderGate();   // new: decide hero vs dashboard based on token
 </script>
