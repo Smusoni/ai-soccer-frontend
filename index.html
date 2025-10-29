@@ -282,10 +282,8 @@ const menuContainer=$ document.querySelector('.menu-container');
  function proceedToAnalysis(){
   hide(accountCard);
   show(analysisCard);
-
-  // ✅ show hamburger menu once user is authenticated
   if (menuContainer) menuContainer.style.display = 'block';
-
+  hideLoading();
   setTimeout(() => analysisCard.scrollIntoView({ behavior:'smooth', block:'start' }));
 }
 
@@ -380,6 +378,44 @@ const menuContainer=$ document.querySelector('.menu-container');
 
   // If already logged in, jump to analysis.
   if (getToken()) { proceedToAnalysis(); }
+    /* ================= BOOTSTRAP ================= */
+// optional: if you already have $, hide(), show(), reuse them
+const loading = document.getElementById('loading') || document.querySelector('.loading');
+
+function hideLoading() { if (loading) loading.style.display = 'none'; }
+function showLoading() { if (loading) loading.style.display = 'grid'; } // if you need it later
+
+// we already cached this earlier:
+const menuContainer = document.querySelector('.menu-container');
+
+function goLoggedOutView() {
+  // show account/signup view
+  if (menuContainer) menuContainer.style.display = 'none';
+  hide(analysisCard);
+  show(accountCard);
+  hideLoading();
+}
+
+function goLoggedInView() {
+  // show analysis view
+  hide(accountCard);
+  show(analysisCard);
+  if (menuContainer) menuContainer.style.display = 'block';
+  hideLoading();
+}
+
+// Decide what to show as soon as DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const token = getToken(); // your existing helper
+    if (token) goLoggedInView();
+    else goLoggedOutView();
+  } catch (e) {
+    console.error('Boot error:', e);
+    // fail safe: at least show login screen
+    goLoggedOutView();
+  }
+});
     /* ================= HAMBURGER MENU ================= */
 const menuIcon = document.getElementById('menuIcon');
 const menu = document.getElementById('menu');
