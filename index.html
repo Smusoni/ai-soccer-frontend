@@ -190,273 +190,262 @@
     </div>
   </section>
 
-  <script>
-  /* =================== CONFIG =================== */
-  const BASE =
-    location.hostname.endsWith('github.io')
-      ? 'https://ai-soccer-backend-2-production.up.railway.app'
-      : '';
+ <script>
+/* =================== CONFIG =================== */
+const BASE =
+  location.hostname.endsWith('github.io')
+    ? 'https://ai-soccer-backend-2-production.up.railway.app'
+    : '';
 
-  // Cloudinary unsigned upload
-  const CLOUD_NAME    = 'dblconpx8';
-  const UPLOAD_PRESET = 'ballknowledge_unsigned';
+// Cloudinary unsigned upload
+const CLOUD_NAME   = 'dblconpx8';
+const UPLOAD_PRESET = 'ballknowledge_unsigned';
 
-  /* =================== HELPERS =================== */
-  const $ = (id) => document.getElementById(id);
-  const setToken = (t) => localStorage.setItem('bk_token', t);
-  const getToken = () => localStorage.getItem('bk_token');
-  const clearToken = () => localStorage.removeItem('bk_token');
+/* =================== HELPERS =================== */
+const $ = (id) => document.getElementById(id);
+const setToken   = (t) => localStorage.setItem('bk_token', t);
+const getToken   = ()  => localStorage.getItem('bk_token');
+const clearToken = ()  => localStorage.removeItem('bk_token');
 
-  async function api(path, opts = {}) {
-    const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
-    const t = getToken();
-    if (t) headers['Authorization'] = 'Bearer ' + t;
-    const r = await fetch(`${BASE}${path}`, { ...opts, headers });
-    return r.json();
-  }
-
-  function show(node){ node.classList.remove('hide') }
-  function hide(node){ node.classList.add('hide') }
-
-  /* =================== ELEMENTS =================== */
-  const splash = $('splash');
-  const accountCard  = $('accountCard');
-  const analysisCard = $('analysisCard');
-  const authMsg = $('authMsg');
-
-  // signup/login fields
-  const su_name=$('su_name'), su_email=$('su_email'), su_password=$('su_password'),
-        su_age=$('su_age'),   su_dob=$('su_dob'),
-        li_email=$('li_email'), li_password=$('li_password');
-
-  const signupBtn=$('signupBtn'), loginBtn=$('loginBtn');
-
-  // analysis fields
-  const heightEl=$('height'), weightEl=$('weight'), footEl=$('foot'), positionEl=$('position');
-  const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
-  const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
-  const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList'), comps=$('comps');
-// hamburger menu container (hidden by default via CSS)
-const menuContainer=$ document.querySelector('.menu-container');
-
-  /* =================== AUTH =================== */
-  function setAuthMessage(t, ok=true){ authMsg.textContent=t; authMsg.className= ok ? 'ok' : 'err' }
-
-  async function doSignup() {
-    const payload = {
-      name: su_name.value.trim(),
-      email: su_email.value.trim(),
-      password: su_password.value.trim(),
-      age: Number(su_age.value||0),
-      dob: su_dob.value
-    };
-    if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob) {
-      return setAuthMessage('Please complete all sign-up fields', false);
-    }
-    setAuthMessage('Creating your account…');
-    const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
-    if (out.ok && out.token) {
-      setToken(out.token);
-      setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
-      proceedToAnalysis();
-    } else if (out.ok && out.user) {
-      // if your /signup returns ok without token, auto-login:
-      const li = await api('/api/login',{method:'POST', body: JSON.stringify({email:payload.email, password:payload.password})});
-      if (li.ok && li.token){ setToken(li.token); proceedToAnalysis(); }
-      else setAuthMessage(li.error || 'Login required after signup', false);
-    } else {
-      setAuthMessage(out.error || 'Signup failed', false);
-    }
-  }
-
-  async function doLogin() {
-    const email = li_email.value.trim();
-    const password = li_password.value.trim();
-    if (!email || !password) return setAuthMessage('Enter email & password', false);
-    setAuthMessage('Logging in…');
-    const out = await api('/api/login', { method:'POST', body: JSON.stringify({ email, password })});
-    if (out.ok && out.token) { setToken(out.token); setAuthMessage('Logged in ✅', true); proceedToAnalysis(); }
-    else setAuthMessage(out.error || 'Login failed', false);
-  }
-
- function proceedToAnalysis(){
-  hide(accountCard);
-  show(analysisCard);
-  if (menuContainer) menuContainer.style.display = 'block';
-  hideLoading();
-  setTimeout(() => analysisCard.scrollIntoView({ behavior:'smooth', block:'start' }));
+async function api(path, opts = {}) {
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
+  const t = getToken();
+  if (t) headers['Authorization'] = 'Bearer ' + t;
+  const r = await fetch(`${BASE}${path}`, { ...opts, headers });
+  try { return await r.json(); } catch { return { ok:false, error:'Bad JSON' }; }
 }
 
-  /* =================== CLOUDINARY UPLOAD =================== */
-  async function uploadToCloudinary(file){
-    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('upload_preset', UPLOAD_PRESET);
-    const r = await fetch(url,{method:'POST',body:fd});
-    return r.json();
+// simple show/hide
+function show(el){ if(!el) return; el.classList.remove('hide'); el.style.display=''; }
+function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
+
+/* ================ ELEMENT REFS (your IDs) ================ */
+const accountCard = $('accountCard');   // login / signup card
+const analysisCard = $('analysisCard'); // the analysis UI card
+const authMsg = $('authMsg');
+
+// signup/login fields
+const su_name=$('su_name'), su_email=$('su_email'), su_password=$('su_password'),
+      su_age=$('su_age'),   su_dob=$('su_dob'),
+      li_email=$('li_email'), li_password=$('li_password');
+
+const signupBtn=$('signupBtn'), loginBtn=$('loginBtn');
+
+// analysis fields
+const heightEl=$('height'), weightEl=$('weight'), footEl=$('foot'), positionEl=$('position');
+const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
+const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
+const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList'), comps=$('comps');
+
+// loader (black screen with the single dot)
+const loading = document.getElementById('loading') || document.querySelector('.loading');
+function hideLoading(){ if(loading) loading.style.display='none'; }
+function showLoading(){ if(loading) loading.style.display='grid'; }
+
+/* ================ HAMBURGER MENU (built in JS) ================ */
+let menuContainer; // will be created once
+
+function buildMenuOnce(){
+  if (menuContainer) return; // already built
+
+  // inject minimal styles (safe if you already added CSS)
+  const css = `
+  .menu-container{position:fixed;top:18px;right:24px;z-index:1000;display:none}
+  .menu-icon{font-size:26px;line-height:26px;width:42px;height:42px;display:grid;place-items:center;cursor:pointer;color:#e5e7eb;background:#0b0b0b;border:1px solid #222;border-radius:10px;user-select:none}
+  .menu{position:absolute;top:48px;right:0;min-width:180px;display:none;flex-direction:column;background:#0f0f10;border:1px solid #1f1f22;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);padding:8px}
+  .menu.open{display:flex}
+  .menu a,.menu button{all:unset;cursor:pointer;padding:10px 12px;border-radius:8px;color:#e5e7eb;font-size:14px;display:flex;align-items:center}
+  .menu a:hover,.menu button:hover{background:#18181b}
+  .menu .divider{height:1px;background:#232325;margin:6px 0}
+  `;
+  const style = document.createElement('style');
+  style.innerText = css;
+  document.head.appendChild(style);
+
+  menuContainer = document.createElement('div');
+  menuContainer.className = 'menu-container';
+  menuContainer.setAttribute('data-hamburger','true');
+
+  const icon = document.createElement('div');
+  icon.className = 'menu-icon';
+  icon.innerHTML = '&#9776;'; // ☰
+
+  const panel = document.createElement('div');
+  panel.className = 'menu';
+  panel.setAttribute('role','menu');
+
+  const mkLink = (label, cb) => {
+    const a = document.createElement('a');
+    a.href = '#';
+    a.textContent = label;
+    a.addEventListener('click', (e)=>{ e.preventDefault(); panel.classList.remove('open'); cb && cb(); });
+    return a;
+  };
+
+  const newAnalysis = mkLink('New Analysis', () => {
+    hide(accountCard); show(analysisCard); hide(results);
+    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
+  });
+
+  const library = mkLink('Library', () => {
+    // TODO: wire to your real library page/section; placeholder for now
+    alert('Library coming soon — link this to your history page/section.');
+  });
+
+  const divider = document.createElement('div'); divider.className = 'divider';
+
+  const logout = document.createElement('button');
+  logout.textContent = 'Logout';
+  logout.addEventListener('click', () => {
+    clearToken();
+    // return to account screen without hard reload
+    if (menuContainer) menuContainer.style.display = 'none';
+    hide(analysisCard); show(accountCard); hide(results);
+  });
+
+  panel.append(newAnalysis, library, divider, logout);
+  menuContainer.append(icon, panel);
+  document.body.appendChild(menuContainer);
+
+  // behavior
+  icon.addEventListener('click', ()=> panel.classList.toggle('open'));
+  window.addEventListener('click', (e)=>{
+    if (!menuContainer.contains(e.target)) panel.classList.remove('open');
+  });
+}
+
+/* ================= AUTH ================= */
+function setAuthMessage(t, ok=true){ authMsg.textContent=t; authMsg.className = ok ? 'ok' : 'err'; }
+
+async function doSignup(){
+  const payload = {
+    name: su_name.value.trim(),
+    email: su_email.value.trim(),
+    password: su_password.value.trim(),
+    age: Number(su_age.value||0),
+    dob: su_dob.value
+  };
+  if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob){
+    return setAuthMessage('Please complete all sign-up fields', false);
   }
+  setAuthMessage('Creating your account…');
+  const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
+  if (out.ok && out.token){
+    setToken(out.token); setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
+    proceedToAnalysis();
+  } else if (out.ok && out.user){
+    const li = await api('/api/login', { method:'POST', body: JSON.stringify({email:payload.email,password:payload.password}) });
+    if (li.ok && li.token){ setToken(li.token); proceedToAnalysis(); }
+    else setAuthMessage(li.error || 'Login required after signup', false);
+  } else {
+    setAuthMessage(out.error || 'Signup failed', false);
+  }
+}
 
-  /* =================== ANALYZE =================== */
-  let lastVideoUrl = '';
+async function doLogin(){
+  const email = li_email.value.trim();
+  const password = li_password.value.trim();
+  if (!email || !password) return setAuthMessage('Enter email & password', false);
+  setAuthMessage('Logging in…');
+  const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
+  if (out.ok && out.token){ setToken(out.token); setAuthMessage('Logged in ✅'); proceedToAnalysis(); }
+  else setAuthMessage(out.error || 'Login failed', false);
+}
 
-  async function doUpload(){
-    const f = clipFile.files?.[0];
-    if (!f){ uploadMsg.textContent='Pick a video first'; uploadMsg.className='err'; return; }
-    uploadMsg.textContent='Uploading…'; uploadMsg.className='muted';
-    try{
-      const up = await uploadToCloudinary(f);
-      if (up.secure_url){
-        lastVideoUrl = up.secure_url;
-        uploadMsg.textContent='Uploaded ✅'; uploadMsg.className='ok';
-        clipInfo.innerHTML = `<span class="pill">${f.name}</span><a href="${up.secure_url}" target="_blank" class="muted">Open</a>`;
-      } else {
-        uploadMsg.textContent='Upload failed'; uploadMsg.className='err';
-        console.warn('Cloudinary:', up);
-      }
-    }catch(e){
-      uploadMsg.textContent='Network error'; uploadMsg.className='err';
-      console.error(e);
+function proceedToAnalysis(){
+  hide(accountCard);
+  show(analysisCard);
+  buildMenuOnce();
+  if (menuContainer) menuContainer.style.display = 'block';
+  hideLoading();
+  setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
+}
+
+/* ============== CLOUDINARY UPLOAD ============== */
+async function uploadToCloudinary(file){
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  const r = await fetch(url, { method:'POST', body: fd });
+  return await r.json();
+}
+
+/* ================= ANALYZE ================= */
+let lastVideoUrl = '';
+
+async function doUpload(){
+  const f = clipFile.files?.[0];
+  if (!f){ uploadMsg.textContent='Pick a video first'; uploadMsg.className='err'; return; }
+  uploadMsg.textContent='Uploading…'; uploadMsg.className='muted';
+  try{
+    const up = await uploadToCloudinary(f);
+    if (up.secure_url){
+      lastVideoUrl = up.secure_url;
+      uploadMsg.textContent = 'Uploaded ✅'; uploadMsg.className='ok';
+      if (clipInfo) clipInfo.innerHTML = `<span class="pill">${f.name}</span><a href="${lastVideoUrl}" target="_blank">View</a>`;
+    } else {
+      uploadMsg.textContent='Upload failed'; uploadMsg.className='err';
+      console.warn('Cloudinary:', up);
     }
+  }catch(e){
+    uploadMsg.textContent='Network error'; uploadMsg.className='err';
+    console.error(e);
   }
+}
 
-  async function doAnalyze(){
-    // gather attributes
-    const attrs = {
+async function doAnalyze(){
+  analyzeStatus.textContent='Analyzing…'; analyzeStatus.className='muted';
+  try{
+    const payload = {
       height: Number(heightEl.value||0),
       weight: Number(weightEl.value||0),
-      foot:   footEl.value,
-      position: positionEl.value
+      foot: footEl.value,
+      position: positionEl.value,
+      videoUrl: lastVideoUrl
     };
-    if (!lastVideoUrl) return analyzeStatus.textContent = 'Upload a video first';
-    if (!attrs.height || !attrs.weight || !attrs.foot || !attrs.position){
-      return analyzeStatus.textContent='Complete attributes first';
+    if (!payload.videoUrl){
+      analyzeStatus.textContent='Upload a clip first'; analyzeStatus.className='err'; return;
     }
-    analyzeStatus.textContent='Analyzing… this can take a moment.';
-    results.classList.add('hide');
+    const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
+    if (!out.ok){ analyzeStatus.textContent = out.error || 'Analyze failed'; analyzeStatus.className='err'; return; }
 
-    // Call your backend: POST /api/analyze
-    // Expect shape:
-    // { ok:true, summary:"...", focus:["…","…"], drills:[{title, url}], comps:["Player A","Player B"] }
-    try{
-      const out = await api('/api/analyze', {
-        method:'POST',
-        body: JSON.stringify({ videoUrl:lastVideoUrl, attributes: attrs })
-      });
+    // Render results
+    summary.textContent = out.summary || 'Summary not available.';
+    focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
+    drillList.innerHTML = (out.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+    comps.innerHTML     = (out.comps  || []).map(c=>`<span class="pill">${c}</span>`).join('');
 
-      if (!out.ok) {
-        analyzeStatus.textContent = out.error || 'Analyze failed';
-        return;
-      }
-
-      // Render results
-      summary.textContent = out.summary || 'Summary not available.';
-      focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('') || '<li class="muted">No items</li>';
-      drillList.innerHTML = (out.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title}</a></li>`).join('') || '<li class="muted">No drills</li>';
-      comps.innerHTML = (out.comps || []).map(c=>`<span class="pill">${c}</span>`).join('') || '<span class="muted">No comps</span>';
-
-      analyzeStatus.textContent='Done ✅';
-      results.classList.remove('hide');
-      results.scrollIntoView({behavior:'smooth', block:'start'});
-    }catch(e){
-      analyzeStatus.textContent='Network error';
-      console.error(e);
-    }
+    analyzeStatus.textContent='Done ✅'; analyzeStatus.className='ok';
+    results.classList.remove('hide');
+    results.scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(e){
+    analyzeStatus.textContent='Network error'; analyzeStatus.className='err';
+    console.error(e);
   }
-
-  /* =================== WIRE UP =================== */
-  signupBtn.onclick = doSignup;
-  loginBtn.onclick  = doLogin;
-  uploadBtn.onclick = doUpload;
-  analyzeBtn.onclick= doAnalyze;
-
-  // Splash → show only Account
-  window.addEventListener('error', e => console.error('[FrontError]', e?.error||e?.message));
-  setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>splash.remove(), 400); }, 800);
-  hide(analysisCard);
-  show(accountCard);
-
-  // If already logged in, jump to analysis.
-  if (getToken()) { proceedToAnalysis(); }
-    /* ================= BOOTSTRAP ================= */
-// optional: if you already have $, hide(), show(), reuse them
-const loading = document.getElementById('loading') || document.querySelector('.loading');
-
-function hideLoading() { if (loading) loading.style.display = 'none'; }
-function showLoading() { if (loading) loading.style.display = 'grid'; } // if you need it later
-
-// we already cached this earlier:
-const menuContainer = document.querySelector('.menu-container');
-
-function goLoggedOutView() {
-  // show account/signup view
-  if (menuContainer) menuContainer.style.display = 'none';
-  hide(analysisCard);
-  show(accountCard);
-  hideLoading();
 }
 
-function goLoggedInView() {
-  // show analysis view
-  hide(accountCard);
-  show(analysisCard);
-  if (menuContainer) menuContainer.style.display = 'block';
-  hideLoading();
-}
+/* ================= WIRE UP ================= */
+signupBtn && (signupBtn.onclick = doSignup);
+loginBtn  && (loginBtn.onclick  = doLogin);
+uploadBtn && (uploadBtn.onclick = doUpload);
+analyzeBtn&& (analyzeBtn.onclick= doAnalyze);
 
-// Decide what to show as soon as DOM is ready
+/* ================= BOOTSTRAP ================= */
 document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const token = getToken(); // your existing helper
-    if (token) goLoggedInView();
-    else goLoggedOutView();
-  } catch (e) {
-    console.error('Boot error:', e);
-    // fail safe: at least show login screen
-    goLoggedOutView();
+  try{
+    buildMenuOnce(); // built early; stays hidden until logged in
+    if (getToken()){
+      // if already logged in, go straight to analysis and show menu
+      hide(accountCard); show(analysisCard);
+      if (menuContainer) menuContainer.style.display='block';
+    } else {
+      // logged out view
+      if (menuContainer) menuContainer.style.display='none';
+      hide(analysisCard); show(accountCard);
+    }
+  } finally {
+    hideLoading(); // ALWAYS remove the black loading overlay
   }
 });
-    /* ================= HAMBURGER MENU ================= */
-const menuIcon = document.getElementById('menuIcon');
-const menu = document.getElementById('menu');
-const newAnalysis = document.getElementById('newAnalysis');
-const library = document.getElementById('library');
-const logoutBtn = document.getElementById('logout');
-
-// Toggle dropdown
-menuIcon.addEventListener('click', () => {
-  menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
-});
-
-// Close when clicking outside
-window.addEventListener('click', (e) => {
-  if (!menu.contains(e.target) && !menuIcon.contains(e.target)) {
-    menu.style.display = 'none';
-  }
-});
-
-// Button logic
-newAnalysis.addEventListener('click', (e) => {
-  e.preventDefault();
-  menu.style.display = 'none';
-  show(analysisCard);
-  hide(results);
-  hide(accountCard);
-});
-
-library.addEventListener('click', (e) => {
-  e.preventDefault();
-  menu.style.display = 'none';
-  alert('Library screen coming soon!'); // You can later link this to a real library screen
-});
-
-logoutBtn.addEventListener('click', (e) => {
-  e.preventDefault();
-  menu.style.display = 'none';
-  clearToken();  // uses your existing clearToken() helper
-  alert('Logged out!');
-  location.reload(); // returns to login/signup screen
-});
-  </script>
-</body>
-</html>
+</script>
