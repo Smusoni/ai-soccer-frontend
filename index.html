@@ -2,436 +2,340 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SkillzWithSyd – Prototype</title>
-  
-  <!-- Social & preview metadata -->
-<meta name="theme-color" content="#0f0f0f" />
-<meta property="og:type" content="website" />
-<meta property="og:title" content="Ball Knowledge – AI Soccer Prototype" />
-<meta property="og:description" content="Add players and preview AI-style analysis. Built by Ball Knowledge." />
-<meta property="og:image" content="ball-knowledge-high-resolution-logo.png" />
-<meta property="og:url" content="https://smusoni.github.io/ai-soccer-frontend/" />
-<meta name="twitter:card" content="summary_large_image" />
-  
-  <!-- Favicon -->
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="manifest" href="site.webmanifest">
-
- <style>
-  body {
-    font-family: "Poppins", Arial, sans-serif;
-    background: #0f0f0f;
-    color: #fff;
-    margin: 24px;
-    max-width: 720px;
-    line-height: 1.6;
-  }
-  h1 {
-    margin: 10px 0;
-    font-size: 2rem;
-    color: #00ff88;
-    text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
-  }
-  .card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 16px;
-    margin: 12px 0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-  }
-  input, button {
-    padding: 10px 12px;
-    font-size: 16px;
-    border-radius: 8px;
-  }
-  input {
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-  }
-  button {
-    border: none;
-    background: linear-gradient(90deg, #00aaff, #00ff88);
-    color: #fff;
-    cursor: pointer;
-    transition: opacity 0.3s ease;
-  }
-  button:hover { opacity: 0.8; }
-  ul { padding-left: 20px; }
-  .row { display: flex; gap: 8px; }
-  .muted { color: #aaa; font-size: 14px; }
-  #msg { margin-top: 8px; }
-  .error { color: #ff5555; }
-  .ok { color: #00ff88; }
-  img.logo {
-    width: 180px;
-    margin-bottom: 10px;
-  }
-   /* --- Splash / Intro --- */
-#splash {
-  position: fixed; inset: 0; z-index: 9999;
-  display: flex; flex-direction: column; gap: 16px;
-  align-items: center; justify-content: center;
-  background: #0f0f0f;
-}
-
-#splash .logo {
-  width: 160px; height: auto; opacity: 0.95;
-}
-
-#splash h1 {
-  margin: 8px 0 0; font-size: 2.2rem; color: #00ff88;
-  text-shadow: 0 0 12px rgba(0,255,136,0.55);
-}
-
-#splash p { color: #aaa; margin: 0; }
-
-.spinner {
-  width: 44px; height: 44px; border-radius: 50%;
-  border: 3px solid rgba(255,255,255,0.15);
-  border-top-color: #00aaff;
-  animation: spin 0.9s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-#splash.hide { animation: fadeout 500ms ease forwards; }
-@keyframes fadeout { to { opacity: 0; visibility: hidden; } }
-  .analysisBox {
-  background: #111;
-  border-radius: 10px;
-  padding: 14px 18px;
-  margin-top: 10px;
-  line-height: 1.5;
-  color: #eee;
-  box-shadow: 0 0 15px rgba(0,255,100,0.15);
-}
-
-.analysisBox strong {
-  color: #00ff99;
-}
- 
-</style>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ball Knowledge</title>
+  <style>
+    :root { --bg:#0b0b0b; --card:#141414; --muted:#9aa0a6; --text:#e8eaed; --accent:#00ff95; }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Arial;}
+    body{margin:0;background:#0b0b0b;color:var(--text)}
+    .container{max-width:900px;margin:24px auto;padding:0 16px}
+    .card{background:var(--card);border-radius:14px;padding:18px;margin:16px 0}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    input,button{padding:10px 12px;border-radius:10px;border:1px solid #222;background:#0f0f0f;color:var(--text)}
+    input::placeholder{color:#8a8f98}
+    button{border:none;background:linear-gradient(90deg,#00ff95,#19d3ff);color:#000;font-weight:700;cursor:pointer}
+    h1{font-size:36px;margin:8px 0;text-shadow:0 0 15px rgba(0,255,149,.35)}
+    h3{margin:10px 0 14px}
+    .muted{color:var(--muted)}
+    ul{list-style:none;padding:0;margin:10px 0}
+    li{padding:8px 10px;background:#0f0f0f;border:1px solid #222;border-radius:10px;margin:6px 0;cursor:pointer}
+    .hide{display:none !important}
+    .ok{color:#00e676}
+    .err{color:#ff6b6b}
+    #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
+    #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 15px #00ff95;animation:pulse 1.2s infinite}
+    @keyframes pulse{0%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}100%{transform:scale(.9);opacity:.7}}
+  </style>
 </head>
 <body>
-  <!-- Intro / Splash -->
-<div id="splash">
-  <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo" class="logo" />
-  <h1>Ball Knowledge</h1>
-  <p>Initializing AI… connecting to server</p>
-  <div class="spinner"></div>
-</div>
-<!-- ======================= HERO (LOGGED-OUT) ======================= -->
-<div id="hero" class="card" style="max-width:900px;margin:0 auto 16px; text-align:center; display:none;">
-  <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge" style="height:64px;margin-bottom:8px">
-  <h1 style="margin:8px 0 4px">Ball Knowledge</h1>
-  <p class="muted" style="margin:0 0 16px">
-    Upload match clips → AI breaks down your game → drills & pro comps tailored to you.
-  </p>
 
-  <div id="authCard" class="card" style="max-width:720px;margin:12px auto 0;text-align:left">
-    <h3>Sign in / Sign up</h3>
-    <div class="row" style="gap:8px;flex-wrap:wrap">
-      <input id="username" placeholder="Username" style="min-width:200px">
-      <input id="password" type="password" placeholder="Password" style="min-width:200px">
-      <button id="loginBtn">Login</button>
+  <!-- Splash -->
+  <div id="splash"><div class="pulse"></div></div>
+
+  <header class="container">
+    <h1>Ball Knowledge</h1>
+    <p class="muted">Analyze. Learn. Evolve.</p>
+  </header>
+
+  <!-- Account -->
+  <section class="card container" id="accountCard">
+    <h3>Account</h3>
+    <div class="row">
+      <input id="username" type="text" placeholder="Username" style="min-width:220px">
+      <input id="password" type="password" placeholder="Password" style="min-width:220px">
       <button id="signupBtn">Sign Up</button>
+      <button id="loginBtn">Login</button>
+      <button id="logoutBtn">Logout</button>
     </div>
-    <p id="authMsg" class="muted" style="margin-top:6px"></p>
-  </div>
+    <p id="authMsg" class="muted"></p>
+  </section>
 
-  <div class="card" style="max-width:720px;margin:12px auto 0;text-align:left">
-    <h3>What you’ll get</h3>
-    <ul style="margin-left:16px">
-      <li>Instant report: <em>Top skill, Needs work</em>, and <em>Suggested drills</em></li>
-      <li>Smart <em>pro comparisons</em> that match your style</li>
-      <li>Save your <em>profile (height, weight, foot, position, DOB)</em> for better recs</li>
-      <li>History of analyses to track progress</li>
-    </ul>
-  </div>
-</div>
-<!-- ===================== WELCOME BAR (LOGGED-IN) =================== -->
-<div id="welcomeBar" class="card" style="display:none; max-width:900px; margin:0 auto 8px;">
-  <span id="welcomeText">Welcome!</span>
-  <button id="logoutBtn" style="float:right">Logout</button>
-</div>
-  <img src="ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo" class="logo">
-<h1>Ball Knowledge</h1>
-<p class="muted">Analyze. Learn. Evolve.</p>
-  <p id="welcomeMsg" class="muted"></p>
+  <!-- Upload (“attachment” page) -->
+  <section class="card container hide" id="uploadCard">
+    <h3>Upload Player Footage</h3>
+    <p class="muted">Upload a short clip (max ~60s). Accepted: MP4, MOV, WEBM.</p>
+    <div class="row">
+      <input id="clipFile" type="file" accept="video/*">
+      <button id="uploadBtn">Upload</button>
+    </div>
+    <p id="uploadMsg" class="muted"></p>
+  </section>
 
-<!-- PROFILE CARD -->
-<div class="card" id="profileCard" style="display:none">
-  <h3>Player Profile</h3>
-  <input id="height" type="number" placeholder="Height (cm)" />
-  <input id="weight" type="number" placeholder="Weight (kg)" />
-  <input id="foot" type="text" placeholder="Dominant Foot" />
-  <input id="position" type="text" placeholder="Position" />
-  <input id="dob" type="date" placeholder="Date of Birth" />
-  <button id="saveProfileBtn">Save Profile</button>
-  <p id="profileMsg" class="muted"></p>
-</div>
-  <div class="card">
+  <!-- Profile (“describe yourself” page) -->
+  <section class="card container hide" id="profileCard">
+    <h3>Player Profile</h3>
+    <div class="row">
+      <input id="height"   type="number" placeholder="Height (cm)">
+      <input id="weight"   type="number" placeholder="Weight (kg)">
+    </div>
+    <div class="row">
+      <input id="foot"     type="text"    placeholder="Dominant Foot">
+      <input id="position" type="text"    placeholder="Position">
+    </div>
+    <div class="row">
+      <input id="dob" type="date" placeholder="DOB">
+      <button id="saveProfileBtn">Save Profile</button>
+    </div>
+    <p id="profileMsg" class="muted"></p>
+  </section>
+
+  <!-- Add player -->
+  <section class="card container">
     <h3>Add player</h3>
     <div class="row">
-      <input id="name" placeholder="Player name" />
+      <input id="name" type="text" placeholder="Player name">
       <button id="addBtn">Add</button>
     </div>
-    <div id="msg"></div>
-  </div>
+    <p id="msg" class="muted"></p>
+  </section>
 
-  <div class="card">
+  <!-- Players -->
+  <section class="card container">
     <h3>Players</h3>
     <button id="refresh">Refresh list</button>
     <ul id="list"></ul>
-  </div>
-  <!-- ======================= DASHBOARD (LOGGED-IN) ====================== -->
-<div id="dashboard" style="display:none">
-  <!-- Analysis Card -->
-<div class="card" id="analysisCard" style="display:none">
-  <h3>AI Analysis</h3>
-  <p class="muted">Performance breakdown & recommendations.</p>
+  </section>
 
-  <div id="analysisResult" class="analysisBox">
-    <p class="muted">Select a player to view their AI analysis.</p>
-  </div>
+  <script>
+  // ========= CONFIG =========
+  const BASE =
+    location.hostname.endsWith('github.io')
+      ? 'https://ai-soccer-backend-2-production.up.railway.app'
+      : '';
 
-  <button id="refreshAnalysis" style="margin-top:12px">Re-run Analysis</button>
-</div>
-  <!-- Attributes Card -->
-<div class="card" id="attrCard" style="display:none;">
-  <h3>Attributes</h3>
-  <p class="muted">Adjust your current self-rating (0–100). Saved on this device for now.</p>
+  // Cloudinary (unsigned)
+  const CLOUD_NAME    = 'dblconpx8';                 // <- your cloud name
+  const UPLOAD_PRESET = 'ballknowledge_unsigned';    // <- your unsigned preset
 
-  <label>Pace <input type="range" id="attrPace" min="0" max="100" value="60" oninput="attrPaceVal.textContent=this.value"> <strong id="attrPaceVal">60</strong></label><br>
-  <label>Technique <input type="range" id="attrTech" min="0" max="100" value="60" oninput="attrTechVal.textContent=this.value"> <strong id="attrTechVal">60</strong></label><br>
-  <label>Awareness <input type="range" id="attrAware" min="0" max="100" value="60" oninput="attrAwareVal.textContent=this.value"> <strong id="attrAwareVal">60</strong></label><br>
-  <label>Composure <input type="range" id="attrComp" min="0" max="100" value="60" oninput="attrCompVal.textContent=this.value"> <strong id="attrCompVal">60</strong></label><br>
+  // ========= UTIL: DOM + token helpers =========
+  const $ = (id) => document.getElementById(id);
+  const setToken = (t) => localStorage.setItem('bk_token', t);
+  const getToken = () => localStorage.getItem('bk_token');
+  const clearToken = () => localStorage.removeItem('bk_token');
 
-  <button id="saveAttrs" style="margin-top:10px">Save attributes</button>
-  <p id="attrMsg" class="muted" style="margin-top:6px"></p>
-</div>
-  <!-- Clips Card -->
-<div class="card" id="clipsCard" style="display:none;">
-  <h3>Clips</h3>
-  <p class="muted">Uploaded clips for the selected player.</p>
-  <ul id="clipList"></ul>
-</div>
-  <!-- === Upload Video Clip === -->
-<div class="row" style="margin-top:12px">
-  <input id="clipFile" type="file" accept="video/*" />
-  <button id="uploadBtn">Upload clip</button>
-</div>
-<p id="uploadMsg" class="muted" style="margin-top:6px"></p>
-<!-- Optional video preview -->
-<div id="videoPreview" style="display:none; margin-top:10px;">
-  <h4>Uploaded Clip Preview:</h4>
-  <video id="previewPlayer" controls width="320"></video>
-</div>
-  <!-- Upload Footage Card -->
-<div class="card" id="uploadCard">
-  <h3>Upload Player Footage</h3>
-  <p class="muted">Upload a short clip (max 60s). Accepted formats: MP4, MOV, WEBM.</p>
-  <input type="file" id="fileInput" accept="video/*,image/*">
-  <button id="uploadBtn">Upload</button>
-  <p id="uploadMsg" class="muted"></p>
-</div>
-  <!-- Upload Player Clip -->
-<div class="card" id="uploadCard" style="display:none; margin-top:12px;">
-  <h3>Upload Player Clip</h3>
-  <input id="clipFile" type="file" accept="video/*" />
-  <button id="uploadBtn">Upload clip</button>
-  <p id="uploadMsg" class="muted" style="margin-top:6px;"></p>
-</div>
-  <!-- Uploaded Video Preview -->
-<div id="videoPreview" style="display:none; margin-top:10px; text-align:center;">
-  <h4>Uploaded Clip Preview:</h4>
-  <video id="previewPlayer" controls width="320" height="240" style="border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.2);"></video>
-</div>
-  
-</div> <!-- end #dashboard -->
-
-<script>
-/* ==========================  BK FRONTEND – SINGLE SCRIPT  ========================== */
-const $ = (sel) => document.querySelector(sel);
-
-(function devIdCheck(){
-  const counts = {};
-  document.querySelectorAll('[id]').forEach(n => counts[n.id]=(counts[n.id]||0)+1);
-  const dups = Object.entries(counts).filter(([_,c])=>c>1);
-  if (dups.length) console.warn('[BK] Duplicate IDs found:', dups);
-})();
-
-const BASE = (location.hostname.endsWith('github.io') || location.hostname.includes('vercel.app'))
-  ? 'https://ai-soccer-backend-2-production.up.railway.app'
-  : '';
-
-const CLOUD_NAME    = 'dblconpx8';
-const UPLOAD_PRESET = 'ballknowledge_unsigned';
-
-// Elements (guarded)
-const usernameEl    = document.querySelector('#username');
-const passwordEl    = document.querySelector('#password');
-const loginBtn      = document.querySelector('#loginBtn');
-const signupBtn     = document.querySelector('#signupBtn');
-const logoutBtn     = document.querySelector('#logoutBtn');
-const authMsg       = document.querySelector('#authMsg');
-const profileCard   = document.querySelector('#profileCard');
-const heightEl      = document.querySelector('#height');
-const weightEl      = document.querySelector('#weight');
-const footEl        = document.querySelector('#foot');
-const positionEl    = document.querySelector('#position');
-const dobEl         = document.querySelector('#dob');
-const saveProfileBtn= document.querySelector('#saveProfileBtn');
-const profileMsg    = document.querySelector('#profileMsg');
-const nameEl        = document.querySelector('#name');
-const addBtn        = document.querySelector('#addBtn');
-const msgEl         = document.querySelector('#msg');
-const refreshBtn    = document.querySelector('#refresh');
-const listEl        = document.querySelector('#list');
-const analysisCard  = document.querySelector('#analysisCard');
-const analysisResult= document.querySelector('#analysisResult');
-const uploadCard    = document.querySelector('#uploadCard');
-const uploadBtn     = document.querySelector('#uploadBtn');
-const fileInput     = document.querySelector('#clipFile');
-const uploadMsg     = document.querySelector('#uploadMsg');
-const splashEl      = document.querySelector('#splash');
-
-function hideSplash(){ if(!splashEl) return; try{ splashEl.classList.add('hide'); }catch{} splashEl.remove();}
-window.addEventListener('load', ()=> setTimeout(hideSplash, 300));
-setTimeout(hideSplash, 2000);
-
-function setToken(t){ try{ localStorage.setItem('bk_token', t);}catch{} }
-function getToken(){ try{ return localStorage.getItem('bk_token'); }catch{ return null; } }
-function clearToken(){ try{ localStorage.removeItem('bk_token'); }catch{} }
-
-async function api(path, options = {}) {
-  const headers = options.headers ? {...options.headers} : {};
-  const tok = getToken();
-  if (tok) headers['Authorization'] = `Bearer ${tok}`;
-  if (!headers['Content-Type'] && options.method && options.method !== 'GET') {
-    headers['Content-Type'] = 'application/json';
+  // Generic fetch that auto-injects JWT if present
+  async function api(path, opts = {}) {
+    const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+    const t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+    const r = await fetch(`${BASE}${path}`, { ...opts, headers });
+    return r.json();
   }
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
-  let body; try { body = await res.json(); } catch { body = { ok:false, error:'Bad JSON'} }
-  return body;
-}
 
-function showAuth(msg, ok=true){
-  if (!authMsg) return;
-  authMsg.textContent = msg;
-  authMsg.style.opacity = '1';
-  authMsg.style.color = ok ? '#aefcc5' : '#ff9a9a';
-  setTimeout(()=>{ authMsg.style.opacity = '0.75'; }, 1200);
-}
+  // ========= SECTION TOGGLING (flow control) =========
+  const accountCard = $('accountCard');
+  const uploadCard  = $('uploadCard');
+  const profileCard = $('profileCard');
 
-async function doSignup(){
-  const username = usernameEl?.value?.trim() || '';
-  const password = passwordEl?.value || '';
-  if (!username || !password) return showAuth('Enter username + password', false);
-  showAuth('Signing up...');
-  const out = await api('/api/signup', { method:'POST', body: JSON.stringify({ username, password }) });
-  if (out.ok && out.token) { setToken(out.token); showAuth(`Welcome, ${out.user?.username || username}! ✅`, true); revealProfile(); }
-  else { showAuth(out.error || 'Signup failed', false); }
-}
+  function showAccount() {
+    accountCard.classList.remove('hide');
+    uploadCard.classList.add('hide');
+    profileCard.classList.add('hide');
+  }
+  function showUploadAndProfile() {
+    accountCard.classList.remove('hide'); // keep account visible if you like; or hide:
+    // accountCard.classList.add('hide');
+    uploadCard.classList.remove('hide');
+    profileCard.classList.remove('hide');
+    // scroll to Upload
+    setTimeout(() => uploadCard.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+  }
 
-async function doLogin(){
-  const username = usernameEl?.value?.trim() || '';
-  const password = passwordEl?.value || '';
-  if (!username || !password) return showAuth('Enter username + password', false);
-  showAuth('Logging in...');
-  const out = await api('/api/login', { method:'POST', body: JSON.stringify({ username, password }) });
-  if (out.ok && out.token) { setToken(out.token); showAuth(`Welcome, ${out.user?.username || username}! ✅`, true); revealProfile(); }
-  else { showAuth(out.error || 'Login failed', false); }
-}
+  // ========= ELEMENTS =========
+  const usernameEl = $('username');
+  const passwordEl = $('password');
+  const signupBtn  = $('signupBtn');
+  const loginBtn   = $('loginBtn');
+  const logoutBtn  = $('logoutBtn');
+  const authMsg    = $('authMsg');
 
-function doLogout(){ clearToken(); showAuth('Logged out', true); if (profileCard) profileCard.style.display = 'none'; }
+  const saveProfileBtn = $('saveProfileBtn');
+  const heightEl   = $('height');
+  const weightEl   = $('weight');
+  const footEl     = $('foot');
+  const positionEl = $('position');
+  const dobEl      = $('dob');
+  const profileMsg = $('profileMsg');
 
-async function saveProfile(){
-  const payload = {
-    height:   heightEl?.value?.trim() || '',
-    weight:   weightEl?.value?.trim() || '',
-    foot:     footEl?.value?.trim() || '',
-    position: positionEl?.value?.trim() || '',
-    dob:      dobEl?.value?.trim() || ''
-  };
-  const out = await api('/api/profile', { method:'POST', body: JSON.stringify(payload) });
-  const ok = !!out.ok;
-  if (profileMsg) { profileMsg.textContent = ok ? 'Profile saved ✅' : (out.error || 'Profile save failed'); profileMsg.style.color = ok ? '#aefcc5' : '#ff9a9a'; }
-  return out;
-}
+  const addBtn     = $('addBtn');
+  const nameEl     = $('name');
+  const msgEl      = $('msg');
+  const refreshBtn = $('refresh');
+  const listEl     = $('list');
 
-function revealProfile(){ if (profileCard) profileCard.style.display = 'block'; }
+  const clipInput  = $('clipFile');
+  const uploadBtn  = $('uploadBtn');
+  const uploadMsg  = $('uploadMsg');
 
-function showMsg(m, ok=true){ if (!msgEl) return; msgEl.textContent = m; msgEl.style.color = ok ? '#aefcc5' : '#ff9a9a'; }
-
-async function addPlayer(){
-  const name = nameEl?.value?.trim();
-  if (!name) return showMsg('Enter a player name', false);
-  showMsg('Adding player…');
-  const out = await api('/api/player', { method:'POST', body: JSON.stringify({ name }) });
-  if (out.ok) { nameEl.value=''; await refresh(); showMsg(`Added "${name}" ✅`, true); if (analysisCard) analysisCard.style.display='block'; if (uploadCard) uploadCard.style.display='block'; }
-  else { showMsg(out.error || 'Could not add player', false); }
-}
-
-async function refresh(){
-  if (!listEl) return;
-  listEl.innerHTML = '<li class="muted">Loading…</li>';
-  try{
-    const out = await api('/api/players', { cache:'no-store' });
-    const players = out.players || [];
-    if (!players.length){ listEl.innerHTML = '<li class="muted">No players yet.</li>'; return; }
-    listEl.innerHTML = '';
-    players.forEach(p=>{
-      const li = document.createElement('li');
-      const name = typeof p === 'string' ? p : (p.name || '');
-      li.textContent = name || String(p);
-      li.style.cursor = 'pointer';
-      li.onclick = () => { if (analysisCard) analysisCard.style.display='block'; if (uploadCard) uploadCard.style.display='block'; };
-      listEl.appendChild(li);
+  // ========= AUTH =========
+  async function signup(username, password) {
+    const out = await api('/api/signup', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
     });
-  }catch(e){
-    console.error('[BK] refresh error', e);
-    listEl.innerHTML = '<li class="error">Failed to load players. Server may be offline.</li>';
+    return out;
   }
-}
+  async function login(username, password) {
+    const out = await api('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+    return out;
+  }
+  function setAuthMessage(text, ok=true) {
+    authMsg.textContent = text;
+    authMsg.className = ok ? 'ok' : 'err';
+  }
 
-async function uploadToCloudinary(file){
-  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('upload_preset', UPLOAD_PRESET);
-  const res = await fetch(url, { method:'POST', body: fd });
-  return res.json();
-}
+  // ========= PROFILE =========
+  async function saveProfile(payload) {
+    const out = await api('/api/profile', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return out;
+  }
 
-// Wiring
-if (signupBtn)   signupBtn.onclick   = doSignup;
-if (loginBtn)    loginBtn.onclick    = doLogin;
-if (logoutBtn)   logoutBtn.onclick   = doLogout;
-if (saveProfileBtn) saveProfileBtn.onclick = saveProfile;
-if (addBtn)      addBtn.onclick      = addPlayer;
-if (refreshBtn)  refreshBtn.onclick  = refresh;
+  // ========= PLAYERS =========
+  async function refresh() {
+    try {
+      if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
+      const data = await api('/api/players', { method:'GET' });
+      if (!listEl) return;
+      const players = data.players || [];
+      if (!players.length) {
+        listEl.innerHTML = '<li class="muted">No players yet.</li>';
+        return;
+      }
+      listEl.innerHTML = '';
+      players.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = typeof p==='string' ? p : (p.name || '(unnamed)');
+        listEl.appendChild(li);
+      });
+    } catch (e) {
+      console.error('[BK] refresh error:', e);
+      if (listEl) listEl.innerHTML = '<li class="err">Failed to load players. Server may be offline.</li>';
+    }
+  }
 
-if (uploadBtn && fileInput){
-  uploadBtn.onclick = async ()=>{
-    const f = fileInput.files?.[0];
-    if (!f){ if(uploadMsg) uploadMsg.textContent='Choose a video first'; return; }
-    if (uploadMsg) uploadMsg.textContent='Uploading…';
-    try{
-      const up = await uploadToCloudinary(f);
-      if (up.secure_url){ if(uploadMsg) uploadMsg.textContent='Uploaded ✅'; }
-      else { if(uploadMsg) uploadMsg.textContent='Upload failed'; }
-    }catch(e){ console.error('[BK] cloudinary error', e); if(uploadMsg) uploadMsg.textContent='Network error'; }
+  async function addPlayer() {
+    const name = nameEl.value.trim();
+    if (!name) return;
+    try {
+      const out = await api('/api/player', {
+        method: 'POST',
+        body: JSON.stringify({ name })
+      });
+      msgEl.textContent = out.ok ? `Added: ${name}` : (out.error || 'Could not add player');
+      msgEl.className = out.ok ? 'ok' : 'err';
+      if (out.ok) { nameEl.value=''; await refresh(); }
+    } catch (e) {
+      console.error('[BK] add error:', e);
+      msgEl.textContent = 'Network error';
+      msgEl.className = 'err';
+    }
+  }
+
+  // ========= CLOUDINARY DIRECT UPLOAD =========
+  async function uploadToCloudinary(file) {
+    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', UPLOAD_PRESET);
+    const r = await fetch(url, { method:'POST', body: fd });
+    return r.json();
+  }
+
+  // ========= WIRE UP =========
+  if (signupBtn) signupBtn.onclick = async () => {
+    const u = usernameEl.value.trim();
+    const p = passwordEl.value.trim();
+    if (!u || !p) return setAuthMessage('Enter username & password', false);
+    setAuthMessage('Creating account…');
+    const out = await signup(u,p);
+    if (out.ok) {
+      setAuthMessage('Account created ✅ — Please log in now', true);
+    } else {
+      setAuthMessage(out.error || 'Signup failed', false);
+    }
   };
-}
 
-refresh();
-try{ if (getToken() && profileCard) profileCard.style.display = 'block'; }catch{}
-/* ==========================  END  ========================== */
+  if (loginBtn) loginBtn.onclick = async () => {
+    const u = usernameEl.value.trim();
+    const p = passwordEl.value.trim();
+    if (!u || !p) return setAuthMessage('Enter username & password', false);
+    setAuthMessage('Logging in…');
+    const out = await login(u,p);
+    if (out.ok && out.token) {
+      setToken(out.token);
+      setAuthMessage(`Welcome, ${out.user?.username || u} ✅`, true);
+      showUploadAndProfile();               // go to Upload + Profile after login
+    } else {
+      setAuthMessage(out.error || 'Login failed', false);
+    }
+  };
+
+  if (logoutBtn) logoutBtn.onclick = () => {
+    clearToken();
+    setAuthMessage('Logged out', true);
+    showAccount();
+  };
+
+  if (saveProfileBtn) saveProfileBtn.onclick = async () => {
+    const payload = {
+      height:   heightEl.value.trim(),
+      weight:   weightEl.value.trim(),
+      foot:     footEl.value.trim(),
+      position: positionEl.value.trim(),
+      dob:      dobEl.value
+    };
+    profileMsg.textContent = 'Saving…';
+    const out = await saveProfile(payload);
+    profileMsg.textContent = out.ok ? 'Profile saved ✅' : (out.error || 'Profile save failed');
+    profileMsg.className = out.ok ? 'ok' : 'err';
+  };
+
+  if (addBtn) addBtn.onclick = addPlayer;
+  if (refreshBtn) refreshBtn.onclick = refresh;
+
+  if (uploadBtn) uploadBtn.onclick = async () => {
+    const f = clipInput.files?.[0];
+    if (!f) { uploadMsg.textContent = 'Choose a video first'; uploadMsg.className = 'err'; return; }
+    uploadMsg.textContent = 'Uploading…';
+    try {
+      const up = await uploadToCloudinary(f);
+      if (up.secure_url) {
+        // Optionally notify backend you added a clip
+        await api('/api/clip', {
+          method:'POST',
+          body: JSON.stringify({ url: up.secure_url, public_id: up.public_id })
+        });
+        uploadMsg.textContent = 'Uploaded ✅';
+        uploadMsg.className = 'ok';
+        clipInput.value = '';
+      } else {
+        uploadMsg.textContent = 'Upload failed';
+        uploadMsg.className = 'err';
+        console.warn('Cloudinary response:', up);
+      }
+    } catch (e) {
+      uploadMsg.textContent = 'Network error';
+      uploadMsg.className = 'err';
+      console.error('[BK] cloudinary error:', e);
+    }
+  };
+
+  // ========= SPLASH + INITIAL STATE =========
+  window.addEventListener('error', e => console.error('[BK FrontError]', e?.error || e?.message));
+  setTimeout(() => {
+    $('splash')?.classList.add('hide');
+    setTimeout(() => $('splash')?.remove(), 400);
+  }, 800);
+
+  // If user already logged in previously, reveal upload/profile immediately
+  if (getToken()) showUploadAndProfile();
+  refresh();
   </script>
+</body>
+</html>
