@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
@@ -91,7 +91,10 @@
     <h1>Ball Knowledge</h1>
     <p class="muted">Analyze. Learn. Evolve.</p>
   </header>
-
+  
+/* Force app layers above stray loaders */
+#accountCard, #analysisCard, .menu-container { position: relative; z-index: 10; }
+  
   <!-- =========== ACCOUNT (only visible after splash) =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
@@ -448,4 +451,78 @@ document.addEventListener('DOMContentLoaded', () => {
     hideLoading(); // ALWAYS remove the black loading overlay
   }
 });
+/* ===== PATCH: force-hide any full-screen loader and route ===== */
+(function() {
+  function hideKnownLoaders() {
+    const candidates = [
+      '#loading', '.loading', '.loader', '.splash', '#splash',
+      '[data-role="loading"]', '[data-loading="true"]'
+    ];
+    let hits = 0;
+    for (const sel of candidates) {
+      document.querySelectorAll(sel).forEach(el => {
+        el.style.display = 'none';
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        hits++;
+      });
+    }
+    return hits;
+  }
+
+  // also catch generic full-screen overlays we don't know the selector for
+  function hideGenericOverlays() {
+    let hits = 0;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    document.querySelectorAll('body *').forEach(el => {
+      try {
+        const s = getComputedStyle(el);
+        if (s.position !== 'fixed') return;
+        const r = el.getBoundingClientRect();
+        const coverW = r.width / vw, coverH = r.height / vh;
+        const looksDark = (c) => {
+          // very rough check for dark backgrounds
+          const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+          if (!m) return false;
+          const [_, r_, g_, b_] = m.map(Number);
+          return (r_+g_+b_) < 120*3;
+        };
+        if ((coverW > 0.8 && coverH > 0.8) && (looksDark(s.backgroundColor) || s.backdropFilter)) {
+          el.style.display = 'none';
+          el.style.opacity = '0';
+          el.style.pointerEvents = 'none';
+          hits++;
+        }
+      } catch(_) {}
+    });
+    return hits;
+  }
+
+  function routeByAuth() {
+    const token = localStorage.getItem('bk_token');
+    const accountCard = document.getElementById('accountCard');
+    const analysisCard = document.getElementById('analysisCard');
+    const menu = document.querySelector('.menu-container');
+
+    const show = (el) => { if (!el) return; el.classList.remove('hide'); el.style.display=''; };
+    const hide = (el) => { if (!el) return; el.classList.add('hide'); el.style.display='none'; };
+
+    if (token) {
+      hide(accountCard); show(analysisCard);
+      if (menu) menu.style.display = 'block';
+      console.log('[BOOT] token found → analysis view');
+    } else {
+      if (menu) menu.style.display = 'none';
+      show(accountCard); hide(analysisCard);
+      console.log('[BOOT] no token → account view');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const knownHits = hideKnownLoaders();
+    const genericHits = hideGenericOverlays();
+    console.log(`[PATCH] hid loaders → known:${knownHits} generic:${genericHits}`);
+    routeByAuth();
+  });
+})();
 </script>
