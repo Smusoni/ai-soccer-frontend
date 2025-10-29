@@ -1,34 +1,39 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Ball Knowledge</title>
   <style>
-    :root { --bg:#0b0b0b; --card:#141414; --muted:#9aa0a6; --text:#e8eaed; --accent:#00ff95; }
-    *{box-sizing:border-box;font-family:Inter,system-ui,Arial;}
-    body{margin:0;background:#0b0b0b;color:var(--text)}
+    :root{--bg:#0b0b0b;--card:#141414;--muted:#9aa0a6;--text:#e8eaed;--line:#222}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
+    body{margin:0;background:var(--bg);color:var(--text)}
     .container{max-width:900px;margin:24px auto;padding:0 16px}
-    .card{background:var(--card);border-radius:14px;padding:18px;margin:16px 0}
+    .card{background:var(--card);border-radius:14px;padding:18px;margin:16px 0;border:1px solid var(--line)}
     .row{display:flex;gap:12px;flex-wrap:wrap}
-    input,button{padding:10px 12px;border-radius:10px;border:1px solid #222;background:#0f0f0f;color:var(--text)}
+    input,select,button{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f0f0f;color:var(--text)}
+    input,select{min-width:220px}
     input::placeholder{color:#8a8f98}
     button{border:none;background:linear-gradient(90deg,#00ff95,#19d3ff);color:#000;font-weight:700;cursor:pointer}
     h1{font-size:36px;margin:8px 0;text-shadow:0 0 15px rgba(0,255,149,.35)}
     h3{margin:10px 0 14px}
     .muted{color:var(--muted)}
-    ul{list-style:none;padding:0;margin:10px 0}
-    li{padding:8px 10px;background:#0f0f0f;border:1px solid #222;border-radius:10px;margin:6px 0;cursor:pointer}
-    .hide{display:none !important}
+    .hide{display:none!important}
     .ok{color:#00e676}
     .err{color:#ff6b6b}
+    ul{margin:8px 0;padding-left:18px}
+    li{margin:6px 0}
+    /* Splash */
     #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
-    #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 15px #00ff95;animation:pulse 1.2s infinite}
+    #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 16px #00ff95;animation:pulse 1.2s infinite}
     @keyframes pulse{0%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}100%{transform:scale(.9);opacity:.7}}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+    .block-btn{width:100%}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f0f0f;border:1px solid var(--line);margin-right:6px}
   </style>
 </head>
 <body>
-
   <!-- Splash -->
   <div id="splash"><div class="pulse"></div></div>
 
@@ -37,83 +42,121 @@
     <p class="muted">Analyze. Learn. Evolve.</p>
   </header>
 
-  <!-- Account -->
+  <!-- =========== ACCOUNT (only visible after splash) =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
-    <div class="row">
-      <input id="username" type="text" placeholder="Username" style="min-width:220px">
-      <input id="password" type="password" placeholder="Password" style="min-width:220px">
-      <button id="signupBtn">Sign Up</button>
-      <button id="loginBtn">Login</button>
-      <button id="logoutBtn">Logout</button>
+    <div class="grid">
+      <div>
+        <p class="muted">Create your account</p>
+        <div class="row">
+          <input id="su_name" type="text" placeholder="Full name">
+          <input id="su_email" type="email" placeholder="Email">
+        </div>
+        <div class="row">
+          <input id="su_password" type="password" placeholder="Create password">
+          <input id="su_age" type="number" placeholder="Age">
+          <input id="su_dob" type="date" placeholder="DOB">
+        </div>
+        <button id="signupBtn" class="block-btn">Sign Up</button>
+      </div>
+      <div>
+        <p class="muted">Already have an account?</p>
+        <div class="row">
+          <input id="li_email" type="email" placeholder="Email">
+          <input id="li_password" type="password" placeholder="Password">
+        </div>
+        <button id="loginBtn" class="block-btn">Login</button>
+      </div>
     </div>
     <p id="authMsg" class="muted"></p>
   </section>
 
-  <!-- Upload (“attachment” page) -->
-  <section class="card container hide" id="uploadCard">
-    <h3>Upload Player Footage</h3>
-    <p class="muted">Upload a short clip (max ~60s). Accepted: MP4, MOV, WEBM.</p>
-    <div class="row">
-      <input id="clipFile" type="file" accept="video/*">
-      <button id="uploadBtn">Upload</button>
-    </div>
-    <p id="uploadMsg" class="muted"></p>
-  </section>
+  <!-- =========== ANALYSIS (hidden until logged in) =========== -->
+  <section class="card container hide" id="analysisCard">
+    <h3>New Analysis</h3>
 
-  <!-- Profile (“describe yourself” page) -->
-  <section class="card container hide" id="profileCard">
-    <h3>Player Profile</h3>
-    <div class="row">
-      <input id="height"   type="number" placeholder="Height (cm)">
-      <input id="weight"   type="number" placeholder="Weight (kg)">
-    </div>
-    <div class="row">
-      <input id="foot"     type="text"    placeholder="Dominant Foot">
-      <input id="position" type="text"    placeholder="Position">
-    </div>
-    <div class="row">
-      <input id="dob" type="date" placeholder="DOB">
-      <button id="saveProfileBtn">Save Profile</button>
-    </div>
-    <p id="profileMsg" class="muted"></p>
-  </section>
+    <!-- Attributes -->
+    <div class="grid">
+      <div class="card" style="margin:0">
+        <h4>Attributes</h4>
+        <div class="row">
+          <input id="height" type="number" placeholder="Height (cm)">
+          <input id="weight" type="number" placeholder="Weight (kg)">
+        </div>
+        <div class="row">
+          <select id="foot">
+            <option value="" disabled selected>Dominant Foot</option>
+            <option>Right</option><option>Left</option><option>Both</option>
+          </select>
+          <select id="position">
+            <option value="" disabled selected>Position</option>
+            <option>Goalkeeper</option>
+            <option>Right Back</option><option>Center Back</option><option>Left Back</option>
+            <option>Defensive Mid</option><option>Central Mid</option><option>Attacking Mid</option>
+            <option>Right Wing</option><option>Left Wing</option><option>Striker</option>
+          </select>
+        </div>
+        <p class="muted">We’ll pair these with your video to personalize feedback & drills.</p>
+      </div>
 
-  <!-- Add player -->
-  <section class="card container">
-    <h3>Add player</h3>
-    <div class="row">
-      <input id="name" type="text" placeholder="Player name">
-      <button id="addBtn">Add</button>
+      <!-- Video upload -->
+      <div class="card" style="margin:0">
+        <h4>Attach a Game Clip</h4>
+        <div class="row">
+          <input id="clipFile" type="file" accept="video/*">
+          <button id="uploadBtn">Upload</button>
+        </div>
+        <p id="uploadMsg" class="muted"></p>
+        <div id="clipInfo" class="muted"></div>
+      </div>
     </div>
-    <p id="msg" class="muted"></p>
-  </section>
 
-  <!-- Players -->
-  <section class="card container">
-    <h3>Players</h3>
-    <button id="refresh">Refresh list</button>
-    <ul id="list"></ul>
+    <!-- Actions -->
+    <div class="row" style="margin-top:12px">
+      <button id="analyzeBtn">Analyze</button>
+      <span id="analyzeStatus" class="muted"></span>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="hide" style="margin-top:12px">
+      <h4>Your Report</h4>
+      <div id="summary" class="muted" style="margin:8px 0 12px"></div>
+
+      <div class="row">
+        <div class="card" style="flex:1;min-width:280px">
+          <h4>Focus Areas</h4>
+          <ul id="focusList"></ul>
+        </div>
+        <div class="card" style="flex:1;min-width:280px">
+          <h4>Suggested Drills</h4>
+          <ul id="drillList"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>Plays Like</h4>
+        <div id="comps"></div>
+      </div>
+    </div>
   </section>
 
   <script>
-  // ========= CONFIG =========
+  /* =================== CONFIG =================== */
   const BASE =
     location.hostname.endsWith('github.io')
       ? 'https://ai-soccer-backend-2-production.up.railway.app'
       : '';
 
-  // Cloudinary (unsigned)
-  const CLOUD_NAME    = 'dblconpx8';                 // <- your cloud name
-  const UPLOAD_PRESET = 'ballknowledge_unsigned';    // <- your unsigned preset
+  // Cloudinary unsigned upload
+  const CLOUD_NAME    = 'dblconpx8';
+  const UPLOAD_PRESET = 'ballknowledge_unsigned';
 
-  // ========= UTIL: DOM + token helpers =========
+  /* =================== HELPERS =================== */
   const $ = (id) => document.getElementById(id);
   const setToken = (t) => localStorage.setItem('bk_token', t);
   const getToken = () => localStorage.getItem('bk_token');
   const clearToken = () => localStorage.removeItem('bk_token');
 
-  // Generic fetch that auto-injects JWT if present
   async function api(path, opts = {}) {
     const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
     const t = getToken();
@@ -122,220 +165,165 @@
     return r.json();
   }
 
-  // ========= SECTION TOGGLING (flow control) =========
-  const accountCard = $('accountCard');
-  const uploadCard  = $('uploadCard');
-  const profileCard = $('profileCard');
+  function show(node){ node.classList.remove('hide') }
+  function hide(node){ node.classList.add('hide') }
 
-  function showAccount() {
-    accountCard.classList.remove('hide');
-    uploadCard.classList.add('hide');
-    profileCard.classList.add('hide');
-  }
-  function showUploadAndProfile() {
-    accountCard.classList.remove('hide'); // keep account visible if you like; or hide:
-    // accountCard.classList.add('hide');
-    uploadCard.classList.remove('hide');
-    profileCard.classList.remove('hide');
-    // scroll to Upload
-    setTimeout(() => uploadCard.scrollIntoView({behavior:'smooth', block:'start'}), 50);
-  }
+  /* =================== ELEMENTS =================== */
+  const splash = $('splash');
+  const accountCard  = $('accountCard');
+  const analysisCard = $('analysisCard');
+  const authMsg = $('authMsg');
 
-  // ========= ELEMENTS =========
-  const usernameEl = $('username');
-  const passwordEl = $('password');
-  const signupBtn  = $('signupBtn');
-  const loginBtn   = $('loginBtn');
-  const logoutBtn  = $('logoutBtn');
-  const authMsg    = $('authMsg');
+  // signup/login fields
+  const su_name=$('su_name'), su_email=$('su_email'), su_password=$('su_password'),
+        su_age=$('su_age'),   su_dob=$('su_dob'),
+        li_email=$('li_email'), li_password=$('li_password');
 
-  const saveProfileBtn = $('saveProfileBtn');
-  const heightEl   = $('height');
-  const weightEl   = $('weight');
-  const footEl     = $('foot');
-  const positionEl = $('position');
-  const dobEl      = $('dob');
-  const profileMsg = $('profileMsg');
+  const signupBtn=$('signupBtn'), loginBtn=$('loginBtn');
 
-  const addBtn     = $('addBtn');
-  const nameEl     = $('name');
-  const msgEl      = $('msg');
-  const refreshBtn = $('refresh');
-  const listEl     = $('list');
+  // analysis fields
+  const heightEl=$('height'), weightEl=$('weight'), footEl=$('foot'), positionEl=$('position');
+  const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
+  const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
+  const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList'), comps=$('comps');
 
-  const clipInput  = $('clipFile');
-  const uploadBtn  = $('uploadBtn');
-  const uploadMsg  = $('uploadMsg');
+  /* =================== AUTH =================== */
+  function setAuthMessage(t, ok=true){ authMsg.textContent=t; authMsg.className= ok ? 'ok' : 'err' }
 
-  // ========= AUTH =========
-  async function signup(username, password) {
-    const out = await api('/api/signup', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    });
-    return out;
-  }
-  async function login(username, password) {
-    const out = await api('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    });
-    return out;
-  }
-  function setAuthMessage(text, ok=true) {
-    authMsg.textContent = text;
-    authMsg.className = ok ? 'ok' : 'err';
-  }
-
-  // ========= PROFILE =========
-  async function saveProfile(payload) {
-    const out = await api('/api/profile', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-    return out;
-  }
-
-  // ========= PLAYERS =========
-  async function refresh() {
-    try {
-      if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
-      const data = await api('/api/players', { method:'GET' });
-      if (!listEl) return;
-      const players = data.players || [];
-      if (!players.length) {
-        listEl.innerHTML = '<li class="muted">No players yet.</li>';
-        return;
-      }
-      listEl.innerHTML = '';
-      players.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = typeof p==='string' ? p : (p.name || '(unnamed)');
-        listEl.appendChild(li);
-      });
-    } catch (e) {
-      console.error('[BK] refresh error:', e);
-      if (listEl) listEl.innerHTML = '<li class="err">Failed to load players. Server may be offline.</li>';
+  async function doSignup() {
+    const payload = {
+      name: su_name.value.trim(),
+      email: su_email.value.trim(),
+      password: su_password.value.trim(),
+      age: Number(su_age.value||0),
+      dob: su_dob.value
+    };
+    if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob) {
+      return setAuthMessage('Please complete all sign-up fields', false);
+    }
+    setAuthMessage('Creating your account…');
+    const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
+    if (out.ok && out.token) {
+      setToken(out.token);
+      setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
+      proceedToAnalysis();
+    } else if (out.ok && out.user) {
+      // if your /signup returns ok without token, auto-login:
+      const li = await api('/api/login',{method:'POST', body: JSON.stringify({email:payload.email, password:payload.password})});
+      if (li.ok && li.token){ setToken(li.token); proceedToAnalysis(); }
+      else setAuthMessage(li.error || 'Login required after signup', false);
+    } else {
+      setAuthMessage(out.error || 'Signup failed', false);
     }
   }
 
-  async function addPlayer() {
-    const name = nameEl.value.trim();
-    if (!name) return;
-    try {
-      const out = await api('/api/player', {
-        method: 'POST',
-        body: JSON.stringify({ name })
-      });
-      msgEl.textContent = out.ok ? `Added: ${name}` : (out.error || 'Could not add player');
-      msgEl.className = out.ok ? 'ok' : 'err';
-      if (out.ok) { nameEl.value=''; await refresh(); }
-    } catch (e) {
-      console.error('[BK] add error:', e);
-      msgEl.textContent = 'Network error';
-      msgEl.className = 'err';
-    }
+  async function doLogin() {
+    const email = li_email.value.trim();
+    const password = li_password.value.trim();
+    if (!email || !password) return setAuthMessage('Enter email & password', false);
+    setAuthMessage('Logging in…');
+    const out = await api('/api/login', { method:'POST', body: JSON.stringify({ email, password })});
+    if (out.ok && out.token) { setToken(out.token); setAuthMessage('Logged in ✅', true); proceedToAnalysis(); }
+    else setAuthMessage(out.error || 'Login failed', false);
   }
 
-  // ========= CLOUDINARY DIRECT UPLOAD =========
-  async function uploadToCloudinary(file) {
+  function proceedToAnalysis(){
+    hide(accountCard);
+    show(analysisCard);
+    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+  }
+
+  /* =================== CLOUDINARY UPLOAD =================== */
+  async function uploadToCloudinary(file){
     const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
     const fd = new FormData();
     fd.append('file', file);
     fd.append('upload_preset', UPLOAD_PRESET);
-    const r = await fetch(url, { method:'POST', body: fd });
+    const r = await fetch(url,{method:'POST',body:fd});
     return r.json();
   }
 
-  // ========= WIRE UP =========
-  if (signupBtn) signupBtn.onclick = async () => {
-    const u = usernameEl.value.trim();
-    const p = passwordEl.value.trim();
-    if (!u || !p) return setAuthMessage('Enter username & password', false);
-    setAuthMessage('Creating account…');
-    const out = await signup(u,p);
-    if (out.ok) {
-      setAuthMessage('Account created ✅ — Please log in now', true);
-    } else {
-      setAuthMessage(out.error || 'Signup failed', false);
-    }
-  };
+  /* =================== ANALYZE =================== */
+  let lastVideoUrl = '';
 
-  if (loginBtn) loginBtn.onclick = async () => {
-    const u = usernameEl.value.trim();
-    const p = passwordEl.value.trim();
-    if (!u || !p) return setAuthMessage('Enter username & password', false);
-    setAuthMessage('Logging in…');
-    const out = await login(u,p);
-    if (out.ok && out.token) {
-      setToken(out.token);
-      setAuthMessage(`Welcome, ${out.user?.username || u} ✅`, true);
-      showUploadAndProfile();               // go to Upload + Profile after login
-    } else {
-      setAuthMessage(out.error || 'Login failed', false);
-    }
-  };
-
-  if (logoutBtn) logoutBtn.onclick = () => {
-    clearToken();
-    setAuthMessage('Logged out', true);
-    showAccount();
-  };
-
-  if (saveProfileBtn) saveProfileBtn.onclick = async () => {
-    const payload = {
-      height:   heightEl.value.trim(),
-      weight:   weightEl.value.trim(),
-      foot:     footEl.value.trim(),
-      position: positionEl.value.trim(),
-      dob:      dobEl.value
-    };
-    profileMsg.textContent = 'Saving…';
-    const out = await saveProfile(payload);
-    profileMsg.textContent = out.ok ? 'Profile saved ✅' : (out.error || 'Profile save failed');
-    profileMsg.className = out.ok ? 'ok' : 'err';
-  };
-
-  if (addBtn) addBtn.onclick = addPlayer;
-  if (refreshBtn) refreshBtn.onclick = refresh;
-
-  if (uploadBtn) uploadBtn.onclick = async () => {
-    const f = clipInput.files?.[0];
-    if (!f) { uploadMsg.textContent = 'Choose a video first'; uploadMsg.className = 'err'; return; }
-    uploadMsg.textContent = 'Uploading…';
-    try {
+  async function doUpload(){
+    const f = clipFile.files?.[0];
+    if (!f){ uploadMsg.textContent='Pick a video first'; uploadMsg.className='err'; return; }
+    uploadMsg.textContent='Uploading…'; uploadMsg.className='muted';
+    try{
       const up = await uploadToCloudinary(f);
-      if (up.secure_url) {
-        // Optionally notify backend you added a clip
-        await api('/api/clip', {
-          method:'POST',
-          body: JSON.stringify({ url: up.secure_url, public_id: up.public_id })
-        });
-        uploadMsg.textContent = 'Uploaded ✅';
-        uploadMsg.className = 'ok';
-        clipInput.value = '';
+      if (up.secure_url){
+        lastVideoUrl = up.secure_url;
+        uploadMsg.textContent='Uploaded ✅'; uploadMsg.className='ok';
+        clipInfo.innerHTML = `<span class="pill">${f.name}</span><a href="${up.secure_url}" target="_blank" class="muted">Open</a>`;
       } else {
-        uploadMsg.textContent = 'Upload failed';
-        uploadMsg.className = 'err';
-        console.warn('Cloudinary response:', up);
+        uploadMsg.textContent='Upload failed'; uploadMsg.className='err';
+        console.warn('Cloudinary:', up);
       }
-    } catch (e) {
-      uploadMsg.textContent = 'Network error';
-      uploadMsg.className = 'err';
-      console.error('[BK] cloudinary error:', e);
+    }catch(e){
+      uploadMsg.textContent='Network error'; uploadMsg.className='err';
+      console.error(e);
     }
-  };
+  }
 
-  // ========= SPLASH + INITIAL STATE =========
-  window.addEventListener('error', e => console.error('[BK FrontError]', e?.error || e?.message));
-  setTimeout(() => {
-    $('splash')?.classList.add('hide');
-    setTimeout(() => $('splash')?.remove(), 400);
-  }, 800);
+  async function doAnalyze(){
+    // gather attributes
+    const attrs = {
+      height: Number(heightEl.value||0),
+      weight: Number(weightEl.value||0),
+      foot:   footEl.value,
+      position: positionEl.value
+    };
+    if (!lastVideoUrl) return analyzeStatus.textContent = 'Upload a video first';
+    if (!attrs.height || !attrs.weight || !attrs.foot || !attrs.position){
+      return analyzeStatus.textContent='Complete attributes first';
+    }
+    analyzeStatus.textContent='Analyzing… this can take a moment.';
+    results.classList.add('hide');
 
-  // If user already logged in previously, reveal upload/profile immediately
-  if (getToken()) showUploadAndProfile();
-  refresh();
+    // Call your backend: POST /api/analyze
+    // Expect shape:
+    // { ok:true, summary:"...", focus:["…","…"], drills:[{title, url}], comps:["Player A","Player B"] }
+    try{
+      const out = await api('/api/analyze', {
+        method:'POST',
+        body: JSON.stringify({ videoUrl:lastVideoUrl, attributes: attrs })
+      });
+
+      if (!out.ok) {
+        analyzeStatus.textContent = out.error || 'Analyze failed';
+        return;
+      }
+
+      // Render results
+      summary.textContent = out.summary || 'Summary not available.';
+      focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('') || '<li class="muted">No items</li>';
+      drillList.innerHTML = (out.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title}</a></li>`).join('') || '<li class="muted">No drills</li>';
+      comps.innerHTML = (out.comps || []).map(c=>`<span class="pill">${c}</span>`).join('') || '<span class="muted">No comps</span>';
+
+      analyzeStatus.textContent='Done ✅';
+      results.classList.remove('hide');
+      results.scrollIntoView({behavior:'smooth', block:'start'});
+    }catch(e){
+      analyzeStatus.textContent='Network error';
+      console.error(e);
+    }
+  }
+
+  /* =================== WIRE UP =================== */
+  signupBtn.onclick = doSignup;
+  loginBtn.onclick  = doLogin;
+  uploadBtn.onclick = doUpload;
+  analyzeBtn.onclick= doAnalyze;
+
+  // Splash → show only Account
+  window.addEventListener('error', e => console.error('[FrontError]', e?.error||e?.message));
+  setTimeout(()=>{ splash.classList.add('hide'); setTimeout(()=>splash.remove(), 400); }, 800);
+  hide(analysisCard);
+  show(accountCard);
+
+  // If already logged in, jump to analysis.
+  if (getToken()) { proceedToAnalysis(); }
   </script>
 </body>
 </html>
