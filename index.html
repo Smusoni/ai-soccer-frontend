@@ -5,6 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Ball Knowledge</title>
   <style>
+    .menu-container {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  z-index: 1000;
+}
+
+.menu-icon {
+  font-size: 28px;
+  cursor: pointer;
+  color: white;
+  user-select: none;
+  background-color: #111;
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+}
+
+.menu {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  right: 0;
+  background-color: #111;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  padding: 10px 0;
+  min-width: 150px;
+  z-index: 10;
+}
+
+.menu a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 16px;
+  display: block;
+}
+
+.menu a:hover {
+  background-color: #333;
+}
     :root{--bg:#0b0b0b;--card:#141414;--muted:#9aa0a6;--text:#e8eaed;--line:#222}
     *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
     body{margin:0;background:var(--bg);color:var(--text)}
@@ -34,6 +75,15 @@
   </style>
 </head>
 <body>
+  <!-- Hamburger Menu -->
+<div class="menu-container">
+  <div class="menu-icon" id="menuIcon">&#9776;</div>
+  <div class="menu" id="menu">
+    <a href="#" id="newAnalysis">New Analysis</a>
+    <a href="#" id="library">Library</a>
+    <a href="#" id="logout">Logout</a>
+  </div>
+</div>
   <!-- Splash -->
   <div id="splash"><div class="pulse"></div></div>
 
@@ -186,6 +236,8 @@
   const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
   const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
   const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList'), comps=$('comps');
+// hamburger menu container (hidden by default via CSS)
+const menuContainer=$ document.querySelector('.menu-container');
 
   /* =================== AUTH =================== */
   function setAuthMessage(t, ok=true){ authMsg.textContent=t; authMsg.className= ok ? 'ok' : 'err' }
@@ -227,11 +279,15 @@
     else setAuthMessage(out.error || 'Login failed', false);
   }
 
-  function proceedToAnalysis(){
-    hide(accountCard);
-    show(analysisCard);
-    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}), 50);
-  }
+ function proceedToAnalysis(){
+  hide(accountCard);
+  show(analysisCard);
+
+  // ✅ show hamburger menu once user is authenticated
+  if (menuContainer) menuContainer.style.display = 'block';
+
+  setTimeout(() => analysisCard.scrollIntoView({ behavior:'smooth', block:'start' }));
+}
 
   /* =================== CLOUDINARY UPLOAD =================== */
   async function uploadToCloudinary(file){
@@ -324,6 +380,47 @@
 
   // If already logged in, jump to analysis.
   if (getToken()) { proceedToAnalysis(); }
+    /* ================= HAMBURGER MENU ================= */
+const menuIcon = document.getElementById('menuIcon');
+const menu = document.getElementById('menu');
+const newAnalysis = document.getElementById('newAnalysis');
+const library = document.getElementById('library');
+const logoutBtn = document.getElementById('logout');
+
+// Toggle dropdown
+menuIcon.addEventListener('click', () => {
+  menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+});
+
+// Close when clicking outside
+window.addEventListener('click', (e) => {
+  if (!menu.contains(e.target) && !menuIcon.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+// Button logic
+newAnalysis.addEventListener('click', (e) => {
+  e.preventDefault();
+  menu.style.display = 'none';
+  show(analysisCard);
+  hide(results);
+  hide(accountCard);
+});
+
+library.addEventListener('click', (e) => {
+  e.preventDefault();
+  menu.style.display = 'none';
+  alert('Library screen coming soon!'); // You can later link this to a real library screen
+});
+
+logoutBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  menu.style.display = 'none';
+  clearToken();  // uses your existing clearToken() helper
+  alert('Logged out!');
+  location.reload(); // returns to login/signup screen
+});
   </script>
 </body>
 </html>
