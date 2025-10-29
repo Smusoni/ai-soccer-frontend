@@ -367,3 +367,18 @@
   /* ================= WIRE UP ================= */
   signupBtn && (signupBtn.onclick = doSignup);
   loginBtn  && (loginBtn.onclick  = doLogin);
+</script>
+
+<script>
+  // --- Logo fallback for GitHub Pages ---
+  document.addEventListener('DOMContentLoaded', () => {
+    const img = document.getElementById('logo');
+    if (!img) return;
+    img.onerror = () => {
+      img.src = '/ai-soccer-frontend/ball-knowledge-high-resolution-logo.png';
+    };
+  });
+</script>
+
+</body>
+</html>
