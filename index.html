@@ -65,8 +65,7 @@
 
 <header class="container app-header">
   <div class="brand">
-    <img id="logo" src="./ball-knowledge-high-resolution-logo.png" alt="Ball Knowledge Logo">
-    <h1>Ball Knowledge</h1>
+    <img id="logo" alt="Ball Knowledge Logo">
   </div>
   <p class="muted">Analyze. Learn. Evolve.</p>
 </header>
@@ -368,17 +367,23 @@
   signupBtn && (signupBtn.onclick = doSignup);
   loginBtn  && (loginBtn.onclick  = doLogin);
 </script>
-
+  
 <script>
-  // --- Logo fallback for GitHub Pages ---
-  document.addEventListener('DOMContentLoaded', () => {
+  (function () {
     const img = document.getElementById('logo');
-    if (!img) return;
-    img.onerror = () => {
-      img.src = '/ai-soccer-frontend/ball-knowledge-high-resolution-logo.png';
-    };
-  });
-</script>
+    if (!img) { console.warn('Logo element #logo not found'); return; }
 
+    // Use repo path on GitHub Pages project sites; use relative path elsewhere
+    const src = location.hostname.endsWith('github.io')
+      ? '/ai-soccer-frontend/ball-knowledge-high-resolution-logo.png'
+      : './ball-knowledge-high-resolution-logo.png';
+
+    img.src = src;
+
+    // Tiny debug so you can see what's happening
+    img.onload  = () => console.log('[logo] loaded:', src);
+    img.onerror = () => console.error('[logo] failed to load:', src);
+  })();
+</script>
 </body>
 </html>
