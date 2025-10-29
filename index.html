@@ -164,16 +164,7 @@
 <h1>Ball Knowledge</h1>
 <p class="muted">Analyze. Learn. Evolve.</p>
   <p id="welcomeMsg" class="muted"></p>
-   <!-- AUTH CARD -->
-<div class="card" id="authCard">
-  <h3>Account</h3>
-  <input id="username" type="text" placeholder="Username" />
-  <input id="password" type="password" placeholder="Password" />
-  <button id="signupBtn">Sign Up</button>
-  <button id="loginBtn">Login</button>
-  <button id="logoutBtn">Logout</button>
-  <p id="authMsg" class="muted"></p>
-</div>
+
 <!-- PROFILE CARD -->
 <div class="card" id="profileCard" style="display:none">
   <h3>Player Profile</h3>
@@ -288,9 +279,7 @@ const uploadBtn       = $('uploadBtn');       // ok if null
 const fileInput       = $('clipFile');        // ok if null
 const uploadMsgEl     = $('uploadMsg');       // ok if null
 // --- Auth/Profile elements ---
-const signupBtn = $('#signupBtn');
-const loginBtn = $('#loginBtn');
-const logoutBtn = $('#logoutBtn');
+
 const authMsg = $('#authMsg');
 const profileCard = $('#profileCard');
 const saveProfileBtn = $('#saveProfileBtn');
