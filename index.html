@@ -257,393 +257,295 @@
 </div> <!-- end #dashboard -->
 
 <script>
-// ========================== CONFIG ==========================
-const BASE = "https://ai-soccer-backend-2-production.up.railway.app";
+/* ==========================  BK FRONTEND – SINGLE SCRIPT  ========================== */
+/* Paste this whole block between <script> … </script>. Keep only ONE copy in the page. */
 
-// ========================== ELEMENTS =========================
-const $ = (id) => document.getElementById(id);
+/* ---------- Tiny helper ---------- */
+const $ = (sel) => document.querySelector(sel);
 
-const nameEl          = $('name');
-const addBtn          = $('addBtn');
-const msgEl           = $('msg');
+/* ---------- DEV: catch duplicate IDs quickly (safe to keep in prod) ---------- */
+(function devIdCheck(){
+  const counts = {};
+  document.querySelectorAll('[id]').forEach(n => counts[n.id]=(counts[n.id]||0)+1);
+  const dups = Object.entries(counts).filter(([_,c])=>c>1);
+  if (dups.length) console.warn('[BK] Duplicate IDs found:', dups);
+})();
 
-const refreshBtn      = $('refresh');
-const listEl          = $('list');
+/* ---------- Config ---------- */
+const BASE = (location.hostname.endsWith('github.io') || location.hostname.includes('vercel.app'))
+  ? 'https://ai-soccer-backend-2-production.up.railway.app'
+  : ''; // same-origin when you host frontend + backend together
 
-const analysisCard    = $('analysisCard');
-const analysisResult  = $('analysisResult');
+// Cloudinary (for direct uploads)
+const CLOUD_NAME     = 'dblconpx8';                 // <-- keep yours
+const UPLOAD_PRESET  = 'ballknowledge_unsigned';    // <-- keep yours
 
-const attrCard        = $('attrCard');        // ok if null (optional UI)
-const uploadCard      = $('uploadCard');      // ok if null
-const uploadBtn       = $('uploadBtn');       // ok if null
-const fileInput       = $('clipFile');        // ok if null
-const uploadMsgEl     = $('uploadMsg');       // ok if null
-// --- Auth/Profile elements ---
+/* ---------- Cached Elements (guarded; ok if missing) ---------- */
+// HERO / Auth
+const usernameEl    = $('#username');
+const passwordEl    = $('#password');
+const loginBtn      = $('#loginBtn');
+const signupBtn     = $('#signupBtn');
+const logoutBtn     = $('#logoutBtn');
+const authMsg       = $('#authMsg');       // optional <p id="authMsg">
 
-const authMsg = $('#authMsg');
-const profileCard = $('#profileCard');
-const saveProfileBtn = $('#saveProfileBtn');
+// Profile
+const profileCard       = $('#profileCard');
+const heightEl          = $('#height');
+const weightEl          = $('#weight');
+const footEl            = $('#foot');
+const positionEl        = $('#position');
+const dobEl             = $('#dob');
+const saveProfileBtn    = $('#saveProfileBtn');
+const profileMsg        = $('#profileMsg'); // optional <p id="profileMsg">
 
-const usernameEl = $('#username');
-const passwordEl = $('#password');
+// Players
+const nameEl        = $('#name');
+const addBtn        = $('#addBtn');
+const msgEl         = $('#msg');
+const refreshBtn    = $('#refresh');
+const listEl        = $('#list');
 
-const heightEl = $('#height');
-const weightEl = $('#weight');
-const footEl = $('#foot');
-const positionEl = $('#position');
-const dobEl = $('#dob');
-  
-let currentPlayer = null;
-  // === Landing vs Dashboard toggles ===
-const hero        = $('#hero');
-const dashboard   = $('#dashboard');
-const welcomeBar  = $('#welcomeBar');
-const welcomeText = $('#welcomeText');
+// Analysis (stub)
+const analysisCard  = $('#analysisCard');
+const analysisResult= $('#analysisResult');
 
-const loginBtn    = $('#loginBtn');
-const signupBtn   = $('#signupBtn');
-const logoutBtn   = $('#logoutBtn');
+// Uploads (optional)
+const uploadCard    = $('#uploadCard');
+const uploadBtn     = $('#uploadBtn');
+const fileInput     = $('#clipFile');
+const uploadMsg     = $('#uploadMsg');
 
-const usernameEl  = $('#username');
-const passwordEl  = $('#password');
+// Splash
+const splashEl      = $('#splash');
 
-function showLoggedOut() {
-  if (hero)       hero.style.display       = 'block';
-  if (dashboard)  dashboard.style.display  = 'none';
-  if (welcomeBar) welcomeBar.style.display = 'none';
+/* ---------- Splash hide + failsafe ---------- */
+function hideSplash() {
+  if (!splashEl) return;
+  try { splashEl.classList.add('hide'); } catch {}
+  splashEl.remove();
 }
+window.addEventListener('load', () => setTimeout(hideSplash, 300));  // normal path
+setTimeout(hideSplash, 2000);                                        // failsafe
 
-function showLoggedIn(name) {
-  if (hero)       hero.style.display       = 'none';
-  if (dashboard)  dashboard.style.display  = 'block';
-  if (welcomeBar) {
-    welcomeBar.style.display = 'block';
-    if (welcomeText) welcomeText.textContent = `Welcome, ${name || 'player'}!`;
-  }
-}
+console.log('[BK boot] JS loaded');
 
-// Uses your existing getToken() + api() helper
-async function renderGate() {
-  const t = getToken && getToken();
-  if (!t) { showLoggedOut(); return; }
+/* ---------- Auth token helpers ---------- */
+function setToken(t){ try{ localStorage.setItem('bk_token', t);}catch{} }
+function getToken(){ try{ return localStorage.getItem('bk_token'); }catch{ return null; } }
+function clearToken(){ try{ localStorage.removeItem('bk_token'); }catch{} }
 
-  try {
-    const me = await api('/api/me');
-    if (me.ok && me.user) {
-      showLoggedIn(me.user.username);
-      try { refresh && refresh(); } catch {}
-    } else {
-      localStorage.removeItem('bk_token');
-      showLoggedOut();
-    }
-  } catch {
-    showLoggedOut();
-  }
-}
-  
- // === Auth helpers (paste directly under const BASE) ===
-function setToken(t){ localStorage.setItem('bk_token', t); }
-function getToken(){ return localStorage.getItem('bk_token'); }
-
-// Generic API wrapper (auto-injects token if present)
+/* ---------- Small API wrapper (auto Authorization) ---------- */
 async function api(path, options = {}) {
-  const headers = options.headers || {};
-  const t = getToken();
-  if (t) headers['Authorization'] = `Bearer ${t}`;
-  headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  const headers = options.headers ? {...options.headers} : {};
+  const tok = getToken();
+  if (tok) headers['Authorization'] = `Bearer ${tok}`;
+  if (!headers['Content-Type'] && options.method && options.method !== 'GET') {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
-  return res.json();
-} 
-// ========================== UI HELPERS =======================
-function showMsg(text, ok = true) {
-  if (!msgEl) return;
-  msgEl.textContent = text;
-  msgEl.className = ok ? 'ok' : 'error';
+  let body;
+  try { body = await res.json(); } catch { body = { ok:false, error:'Bad JSON'} }
+  return body;
 }
 
-function analysisMsg(text) {
-  if (!analysisResult) return;
-  analysisResult.innerHTML = `<p class="muted">${text}</p>`;
+/* ==========================  AUTH  ========================== */
+async function doSignup() {
+  const username = usernameEl?.value?.trim() || '';
+  const password = passwordEl?.value || '';
+  if (!username || !password) return showAuth('Enter username + password', false);
+
+  showAuth('Signing up...');
+  const out = await api('/api/signup', {
+    method:'POST',
+    body: JSON.stringify({ username, password })
+  });
+  if (out.ok && out.token) {
+    setToken(out.token);
+    showAuth(`Welcome, ${out.user?.username || username}! ✅`, true);
+    revealProfile();
+  } else {
+    showAuth(out.error || 'Signup failed', false);
+  }
 }
 
-function renderAnalysis(name) {
-  if (!analysisCard || !analysisResult) return;
-  analysisCard.style.display = 'block';
+async function doLogin() {
+  const username = usernameEl?.value?.trim() || '';
+  const password = passwordEl?.value || '';
+  if (!username || !password) return showAuth('Enter username + password', false);
 
-  // --- simple, deterministic mock so it looks AI-ish
-  const hash = [...name].reduce((a,c)=>a+c.charCodeAt(0), 0);
-  const picks = [
-    { label: 'Top Skill',          list: ['Speed & Awareness','1v1 Dribbling','Ball Striking','Press Resistance']},
-    { label: 'Needs Work',         list: ['Composure under pressure','Weak foot','Aerial duels','Scanning']},
-    { label: 'Suggested Drill',    list: ['Small-space reaction training','Rondo 4v2','Wall passing x100','First-touch gates']},
-    { label: 'Pro Comparison',     list: ['Similar style to Leroy Sané','Similar style to Gündoğan','Similar style to Lauren James','Similar style to Pulisic']},
-  ];
-  const rows = picks.map((p,i) => {
-    const v = p.list[hash % p.list.length];
-    return `<p><strong>${p.label}:</strong> ${v}</p>`;
-  }).join('');
-
-  analysisResult.innerHTML = rows;
+  showAuth('Logging in...');
+  const out = await api('/api/login', {
+    method:'POST',
+    body: JSON.stringify({ username, password })
+  });
+  if (out.ok && out.token) {
+    setToken(out.token);
+    showAuth(`Welcome, ${out.user?.username || username}! ✅`, true);
+    revealProfile();
+  } else {
+    showAuth(out.error || 'Login failed', false);
+  }
 }
 
-// ========================== DATA LOADERS =====================
+function doLogout(){
+  clearToken();
+  showAuth('Logged out', true);
+  // (optional) hide profile card after logout
+  if (profileCard) profileCard.style.display = 'none';
+}
+
+function showAuth(msg, ok=true){
+  if (!authMsg) return;
+  authMsg.textContent = msg;
+  authMsg.style.opacity = '1';
+  authMsg.style.color = ok ? '#aefcc5' : '#ff9a9a';
+  setTimeout(()=>{ authMsg.style.opacity = '0.75'; }, 1200);
+}
+
+/* ==========================  PROFILE  ========================== */
+async function saveProfile() {
+  const payload = {
+    height:   heightEl?.value?.trim() || '',
+    weight:   weightEl?.value?.trim() || '',
+    foot:     footEl?.value?.trim() || '',
+    position: positionEl?.value?.trim() || '',
+    dob:      dobEl?.value?.trim() || ''
+  };
+
+  const out = await api('/api/profile', {
+    method:'POST',
+    body: JSON.stringify(payload)
+  });
+
+  const ok = !!out.ok;
+  if (profileMsg) {
+    profileMsg.textContent = ok ? 'Profile saved ✅' : (out.error || 'Profile save failed');
+    profileMsg.style.color = ok ? '#aefcc5' : '#ff9a9a';
+  }
+  return out;
+}
+
+function revealProfile(){
+  if (profileCard) profileCard.style.display = 'block';
+}
+
+/* ==========================  PLAYERS  ========================== */
+async function addPlayer() {
+  const name = nameEl?.value?.trim();
+  if (!name) return showMsg('Enter a player name', false);
+  showMsg('Adding player…');
+  const out = await api('/api/player', {
+    method:'POST',
+    body: JSON.stringify({ name })
+  });
+  if (out.ok) {
+    nameEl.value = '';
+    await refresh();
+    showMsg(`Added "${name}" ✅`, true);
+    // optional: renderAnalysis(name);
+    if (analysisCard) analysisCard.style.display = 'block';
+    if (uploadCard) uploadCard.style.display = 'block';
+  } else {
+    showMsg(out.error || 'Could not add player', false);
+  }
+}
+
 async function refresh() {
+  if (!listEl) return;
+  listEl.innerHTML = '<li class="muted">Loading…</li>';
   try {
-    if (listEl) listEl.innerHTML = '<li class="muted">Loading…</li>';
-
-    const res  = await fetch(`${BASE}/api/players`, { cache: 'no-store' });
-    const data = await res.json();
-
-    if (!listEl) return;
-    listEl.innerHTML = '';
-
-    const players = data.players || [];
+    const out = await api('/api/players', { cache:'no-store' });
+    const players = out.players || [];
     if (!players.length) {
       listEl.innerHTML = '<li class="muted">No players yet.</li>';
       return;
     }
-
-    players.forEach(p => {
+    listEl.innerHTML = '';
+    players.forEach(p=>{
       const li = document.createElement('li');
-      li.textContent = typeof p === 'string' ? p : (p.name || 'Unknown');
+      // supports either string or object from backend
+      const name = typeof p === 'string' ? p : (p.name || '');
+      li.textContent = name || String(p);
       li.style.cursor = 'pointer';
       li.onclick = () => {
-        currentPlayer = li.textContent;
-        renderAnalysis(currentPlayer);
-        if (attrCard)  attrCard.style.display  = 'block';
+        // Optional future hooks:
+        // loadProfile(name); renderAnalysis(name);
+        if (analysisCard) analysisCard.style.display = 'block';
         if (uploadCard) uploadCard.style.display = 'block';
       };
       listEl.appendChild(li);
     });
-
-  } catch (err) {
-    console.error('[BallKnowledge] refresh error:', err);
-    if (listEl) {
-      listEl.innerHTML =
-        '<li class="error">⚠️ Failed to load players. Server may be offline.</li>';
-    }
-  }
-}
-
-async function addPlayer() {
-  const name = (nameEl?.value || '').trim();
-  if (!name) return showMsg('Please enter a name', false);
-
-  try {
-    const res = await fetch(`${BASE}/api/player`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name })
-    });
-    const data = await res.json();
-
-    if (data.ok) {
-      showMsg(`Added ${name} ✅`, true);
-      if (nameEl) nameEl.value = '';
-      await refresh();
-      currentPlayer = name;
-      renderAnalysis(name);
-      if (attrCard)  attrCard.style.display  = 'block';
-      if (uploadCard) uploadCard.style.display = 'block';
-    } else {
-      showMsg(data.error || 'Could not add player', false);
-    }
   } catch (e) {
-    console.error('[BallKnowledge] add error:', e);
-    showMsg('Network error', false);
-  }
-}
-  async function signup(username, password){
-  const out = await api('/api/signup', {
-    method:'POST',
-    body: JSON.stringify({ username, password })
-  });
-  if (out.ok && out.token) {
-    setToken(out.token);
-    console.log('Signed up & stored token', out);
-  } else {
-    console.warn('Signup failed', out);
+    console.error('[BK] refresh error', e);
+    listEl.innerHTML = '<li class="error">Failed to load players. Server may be offline.</li>';
   }
 }
 
-async function login(username, password){
-  const out = await api('/api/login', {
-    method:'POST',
-    body: JSON.stringify({ username, password })
-  });
-  if (out.ok && out.token) {
-    setToken(out.token);
-    console.log('Logged in & stored token', out);
-  } else {
-    console.warn('Login failed', out);
-  }
-}
-async function saveProfile({height, weight, foot, position, dob}){
-  const out = await api('/api/profile', {
-    method:'POST',
-    body: JSON.stringify({ height, weight, foot, position, dob })
-  });
-  if (!out.ok) console.warn('Profile save failed', out);
-  return out;
+function showMsg(m, ok=true){
+  if (!msgEl) return;
+  msgEl.textContent = m;
+  msgEl.style.color = ok ? '#aefcc5' : '#ff9a9a';
 }
 
-// ========================== CLOUDINARY (placeholder safe) ===
-// You can wire real upload later. This keeps the UI stable now.
-(function () {
-  if (!uploadBtn || !fileInput) return;
-  const say = (t) => { if (uploadMsgEl) uploadMsgEl.textContent = t; };
+/* ==========================  ANALYSIS (stub)  ========================== */
+// Fill this later once your analysis endpoint is ready.
+async function renderAnalysis(name) {
+  if (!analysisResult) return;
+  analysisResult.innerHTML = `
+    <div class="muted">AI report placeholder for <b>${name}</b>…</div>
+  `;
+}
 
+/* ==========================  CLOUDINARY UPLOAD (optional)  ========================== */
+/* Requires: <input id="clipFile" type="file" accept="video/*"> and <button id="uploadBtn">Upload</button> */
+async function uploadToCloudinary(file){
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  // (optional) fd.append('folder', 'ballknowledge');
+  const res = await fetch(url, { method:'POST', body: fd });
+  return res.json(); // { secure_url, public_id, ... }
+}
+
+/* ==========================  WIRING  ========================== */
+if (signupBtn)  signupBtn.onclick  = doSignup;
+if (loginBtn)   loginBtn.onclick   = doLogin;
+if (logoutBtn)  logoutBtn.onclick  = doLogout;
+
+if (saveProfileBtn) saveProfileBtn.onclick = saveProfile;
+
+if (addBtn)     addBtn.onclick     = addPlayer;
+if (refreshBtn) refreshBtn.onclick = refresh;
+
+// Upload button (optional – direct to Cloudinary)
+if (uploadBtn && fileInput) {
   uploadBtn.onclick = async () => {
+    const f = fileInput.files?.[0];
+    if (!f) { if (uploadMsg) uploadMsg.textContent = 'Choose a video first'; return; }
+    if (uploadMsg) uploadMsg.textContent = 'Uploading…';
     try {
-      if (!currentPlayer) return say('Pick a player first');
-      const f = fileInput.files?.[0];
-      if (!f) return say('Choose a video first');
-
-      // TODO: replace with real Cloudinary unsigned upload later
-      // For now just pretend it worked:
-      say('Uploaded ✅ (placeholder)');
+      const up = await uploadToCloudinary(f);
+      if (up.secure_url) {
+        if (uploadMsg) uploadMsg.textContent = 'Uploaded ✅';
+        // TODO: call your backend to attach this clip to the current user/player if desired
+        // await api('/api/clip', { method:'POST', body: JSON.stringify({ url: up.secure_url, public_id: up.public_id }) });
+      } else {
+        if (uploadMsg) uploadMsg.textContent = 'Upload failed';
+      }
     } catch (e) {
-      console.error('[BallKnowledge] upload error', e);
-      say('Network error');
-    }
-  };
-})();
-
-// ========================== SPLASH FAILSAFE ==================
-window.addEventListener('error', (e) => console.error('[BK FrontError]', e));
-setTimeout(() => {
-  const s = document.getElementById('splash');
-  if (s) s.classList.add('hide');
-  setTimeout(() => s?.remove(), 600);
-}, 2500);
-  
-  if (signupBtn) {
-  signupBtn.onclick = async () => {
-    const username = usernameEl?.value?.trim();
-    const password = passwordEl?.value ?? '';
-    authMsg.textContent = 'Signing up...';
-    const out = await signup(username, password);
-    authMsg.textContent = out.ok ? 'Signed up ✅' : (out.error || 'Signup failed');
-    if (out.ok) {
-      // show profile card after getting token
-      if (profileCard) profileCard.style.display = 'block';
+      console.error('[BK] cloudinary error', e);
+      if (uploadMsg) uploadMsg.textContent = 'Network error';
     }
   };
 }
 
-if (loginBtn) {
-  loginBtn.onclick = async () => {
-    const username = usernameEl?.value?.trim();
-    const password = passwordEl?.value ?? '';
-    authMsg.textContent = 'Logging in...';
-    const out = await login(username, password);
-    authMsg.textContent = out.ok ? 'Logged in ✅' : (out.error || 'Login failed');
-    if (out.ok && profileCard) profileCard.style.display = 'block';
-  };
-}
+/* Initial load */
+refresh();
 
-if (saveProfileBtn) {
-  saveProfileBtn.onclick = async () => {
-    const payload = {
-      height: heightEl?.value?.trim(),
-      weight: weightEl?.value?.trim(),
-      foot: footEl?.value?.trim(),
-      position: positionEl?.value?.trim(),
-      dob: dobEl?.value?.trim(),
-    };
-    const out = await saveProfile(payload);
-    const msg = out.ok ? 'Profile saved ✅' : (out.error || 'Profile save failed');
-    const el = $('#profileMsg'); if (el) el.textContent = msg;
-  };
-}
+// If already logged in (token in storage), show profile card automatically
+try { if (getToken() && profileCard) profileCard.style.display = 'block'; } catch {}
 
-<!-- keep everything above this line; replace your tail section with this -->
-// LOGIN
-if (loginBtn) loginBtn.onclick = async () => {
-  const u = usernameEl?.value?.trim();
-  const p = passwordEl?.value ?? '';
-  const out = await api('/api/login', {
-    method: 'POST',
-    body: JSON.stringify({ username: u, password: p })
-  });
-  const msgEl = $('#authMsg');
-  if (msgEl) msgEl.textContent = out.ok ? 'Logged in ✅' : (out.error || 'Login failed');
-  if (out.ok && out.token) {
-    setToken(out.token);
-    renderGate();
-  }
-};
-
-// SIGNUP
-if (signupBtn) signupBtn.onclick = async () => {
-  const u = usernameEl?.value?.trim();
-  const p = passwordEl?.value ?? '';
-  const msgEl = $('#authMsg');
-  if (msgEl) msgEl.textContent = 'Signing up...';
-  const out = await api('/api/signup', {
-    method: 'POST',
-    body: JSON.stringify({ username: u, password: p })
-  });
-  if (msgEl) msgEl.textContent = out.ok ? 'Signed up ✅' : (out.error || 'Signup failed');
-  if (out.ok && out.token) {
-    setToken(out.token);
-    renderGate();
-  }
-};
-  
-// LOGOUT
-if (logoutBtn) logoutBtn.onclick = () => {
-  localStorage.removeItem('bk_token');
-  if (usernameEl) usernameEl.value = '';
-  if (passwordEl) passwordEl.value = '';
-  showLoggedOut();
-};
-// =================== WIRE UP + FIRST LOAD =============
-if (typeof addPlayer === 'function' && addBtn) {
-  addBtn.onclick = addPlayer;
-}
-if (typeof refresh === 'function' && refreshBtn) {
-  refreshBtn.onclick = refresh;
-}
-if (typeof refresh === 'function') {
-  refresh(); // initial load
-}
-
-// === Show username after login ===
-async function showWelcome() {
-  try {
-    const t = getToken && getToken();
-    if (!t) return;
-
-    const res = await api('/api/me');
-    if (res && res.ok && res.user) {
-      const el = document.querySelector('#welcomeMsg');
-      if (el) el.textContent = `Welcome, ${res.user.username}!`;
-      // If user already logged in, reveal profile card
-      const profileCard = document.getElementById('profileCard');
-      if (profileCard) profileCard.style.display = 'block';
-    }
-  } catch (e) {
-    console.warn('[Welcome] Could not load user info:', e);
-  }
-}
-showWelcome();
-
-// =================== SPLASH FAILSAFE ===================
-window.addEventListener('error', (e) => {
-  console.error('[BK FrontError]', e);
-});
-setTimeout(() => {
-  try {
-    const s = document.getElementById('splash');
-    if (s) s.classList.add('hide');
-    setTimeout(() => { try { s?.remove(); } catch(_){} }, 600);
-  } catch(_) {}
-}, 2500);
-
-if (addBtn)      addBtn.onclick      = addPlayer;
-if (refreshBtn)  refreshBtn.onclick  = refresh;
-
-refresh();      // existing initial list fetch
-renderGate();   // new: decide hero vs dashboard based on token
+/* ==========================  END  ========================== */
 </script>
