@@ -71,7 +71,14 @@
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
     @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
     .block-btn{width:100%}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f0f0f;border:1px solid var(--line);margin-right:6px}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f0f0f;border:1px solid var(--line);margin-right:6px
+   
+  /* Force app layers above stray loaders */
+  #accountCard, #analysisCard, .menu-container {
+    position: relative;
+    z-index: 10;
+  }
+
   </style>
 </head>
 <body>
@@ -91,9 +98,6 @@
     <h1>Ball Knowledge</h1>
     <p class="muted">Analyze. Learn. Evolve.</p>
   </header>
-  
-/* Force app layers above stray loaders */
-#accountCard, #analysisCard, .menu-container { position: relative; z-index: 10; }
   
   <!-- =========== ACCOUNT (only visible after splash) =========== -->
   <section class="card container" id="accountCard">
