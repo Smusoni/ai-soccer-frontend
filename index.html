@@ -4,10 +4,13 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Ball Knowledge</title>
-  <!-- Favicons -->
-<link rel="icon" type="image/png" sizes="32x32" href="/ai-soccer-frontend/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/ai-soccer-frontend/favicon-16x16.png">
+
+  <!-- Favicons (project path for GitHub Pages) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/ai-soccer-frontend/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/ai-soccer-frontend/favicon-16x16.png">
+
   <style>
+    /* ================= Base Styles ================= */
     :root{--bg:#0b0b0b;--card:#141414;--muted:#9aa0a6;--text:#e8eaed;--line:#222}
     *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
     body{margin:0;background:var(--bg);color:var(--text)}
@@ -27,29 +30,30 @@
     ul{margin:8px 0;padding-left:18px}
     li{margin:6px 0}
 
-    /* Splash */
+    /* ================= Splash Loader ================= */
     #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
     #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 16px #00ff95;animation:pulse 1.2s infinite}
     @keyframes pulse{0%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}100%{transform:scale(.9);opacity:.7}}
+
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
     @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
     .block-btn{width:100%}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f0f0f;border:1px solid var(--line);margin-right:6px}
 
-    /* Hamburger menu (uses your existing markup) */
+    /* ================= Hamburger Menu ================= */
     .menu-container{position:fixed;top:20px;right:30px;z-index:1000;display:none}
     .menu-icon{font-size:28px;cursor:pointer;color:white;user-select:none;background-color:#111;border-radius:8px;padding:6px 10px;box-shadow:0 0 8px rgba(0,0,0,0.3)}
     .menu{display:none;flex-direction:column;position:absolute;right:0;background-color:#111;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.4);padding:10px 0;min-width:150px;z-index:10}
     .menu a{color:white;text-decoration:none;padding:10px 16px;display:block}
     .menu a:hover{background-color:#333}
-    .app-header .brand{display:flex;align-items:center;gap:10px}
 
+    /* ================= Header / Logo ================= */
+    .app-header .brand{display:flex;align-items:center;gap:10px}
     #logo{height:36px;width:auto;display:block}
     @media (min-width:720px){#logo{height:42px}}
 
-
-    /* Ensure app sits above any stray overlays */
-    #accountCard, #analysisCard, .menu-container { position: relative; z-index: 10; }
+    /* ================= Overlay Fix ================= */
+    #accountCard, #analysisCard, .menu-container{position:relative;z-index:10}
   </style>
 </head>
 <body>
@@ -66,13 +70,24 @@
   <!-- Splash -->
   <div id="splash"><div class="pulse"></div></div>
 
-<header class="container app-header">
-  <div class="brand">
-    <img id="logo" alt="Ball Knowledge Logo">
-  </div>
-  <p class="muted">Analyze. Learn. Evolve.</p>
-</header>
-  
+  <!-- Header with brand + LOGO (src set by script below) -->
+  <header class="container app-header">
+    <div class="brand">
+      <img id="logo" alt="Ball Knowledge Logo">
+      <h1>Ball Knowledge</h1>
+    </div>
+    <p class="muted">Analyze. Learn. Evolve.</p>
+    <script>
+      // Set the logo path deterministically so it works locally and on GitHub Pages
+      (function () {
+        const el = document.getElementById('logo');
+        if (!el) return;
+        const base = location.hostname.endsWith('github.io') ? '/ai-soccer-frontend' : '.';
+        el.src = `${base}/ball-knowledge-high-resolution-logo.png`;
+      })();
+    </script>
+  </header>
+
   <!-- =========== ACCOUNT (only visible after splash) =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
@@ -176,9 +191,7 @@
   const BASE =
     location.hostname.endsWith('github.io')
       ? 'https://ai-soccer-backend-2-production.up.railway.app'
-      : location.protocol === 'file:'
-      ? 'http://localhost:8080'
-      : '';
+      : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
 
   // Cloudinary unsigned upload
   const CLOUD_NAME   = 'dblconpx8';
@@ -202,52 +215,54 @@
   function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
 
   /* ================ ELEMENT REFS ================ */
-  const accountCard = $('accountCard');
-  const analysisCard = $('analysisCard');
-  const authMsg = $('authMsg');
+  const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
   const heightEl=$('height'), weightEl=$('weight'), footEl=$('foot'), positionEl=$('position');
   const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
   const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
   const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList'), comps=$('comps');
 
-  // splash/loader
-  const loading = document.getElementById('splash') || document.getElementById('loading') || document.querySelector('.loading');
-  function hideLoading(){ if(loading) loading.style.display='none'; }
+  // splash
+  const splash = document.getElementById('splash');
+  function hideSplash(){ if (splash) splash.style.display='none'; }
 
-  // menu refs (using your existing markup)
-  const menuContainer = document.querySelector('.menu-container');
-  const menuIcon = $('menuIcon');
-  const menuPanel = $('menu');
-  const newAnalysisLink = $('newAnalysis');
-  const libraryLink = $('library');
-  const logoutBtn = $('logout');
+  // menu
+  const menuContainer=document.querySelector('.menu-container');
+  const menuIcon=$('menuIcon'), menuPanel=$('menu');
+  const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
 
-  // menu behavior
-  menuIcon.addEventListener('click', () => {
-    menuPanel.style.display = (menuPanel.style.display === 'flex') ? 'none' : 'flex';
-    if (menuPanel.style.display === '') menuPanel.style.display = 'flex';
+  menuIcon.addEventListener('click', ()=> {
+    menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
+    if (menuPanel.style.display==='') menuPanel.style.display='flex';
   });
-  window.addEventListener('click', (e) => {
-    if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)) {
-      menuPanel.style.display = 'none';
-    }
+  window.addEventListener('click',(e)=>{
+    if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){ menuPanel.style.display='none'; }
   });
-  newAnalysisLink.addEventListener('click', (e) => {
+  newAnalysisLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
     hide(accountCard); show(analysisCard); hide(results);
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
-  libraryLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    menuPanel.style.display='none';
-    alert('Library coming soon — wire this to your history page/section.');
+  libraryLink.addEventListener('click', async (e)=>{
+    e.preventDefault(); menuPanel.style.display='none';
+    const lib = await api('/api/analyses');
+    if(!lib.ok){ return alert(lib.error||'Could not load library'); }
+    hide(accountCard); show(analysisCard);
+    results.classList.remove('hide');
+    summary.innerHTML = `<strong>Your Library</strong>`;
+    focusList.innerHTML=''; drillList.innerHTML=''; comps.innerHTML='';
+    const holder = document.createElement('div');
+    holder.innerHTML = lib.items.map(i=>`
+      <div class="card">
+        <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
+        <div style="margin:6px 0">${i.summary||''}</div>
+        <a href="${i.video_url}" target="_blank">Watch clip</a>
+      </div>`).join('');
+    results.appendChild(holder);
   });
-  logoutBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    menuPanel.style.display='none';
-    clearToken();
-    if (menuContainer) menuContainer.style.display='none';
+  logoutBtn.addEventListener('click',(e)=>{
+    e.preventDefault(); menuPanel.style.display='none';
+    clearToken(); if (menuContainer) menuContainer.style.display='none';
     hide(analysisCard); show(accountCard); hide(results);
   });
 
@@ -295,10 +310,9 @@
   }
 
   function proceedToAnalysis(){
-    hide(accountCard);
-    show(analysisCard);
-    if (menuContainer) menuContainer.style.display = 'block';
-    hideLoading();
+    hide(accountCard); show(analysisCard);
+    if (menuContainer) menuContainer.style.display='block';
+    hideSplash();
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 
@@ -360,6 +374,16 @@
       analyzeStatus.textContent='Done ✅'; analyzeStatus.className='ok';
       results.classList.remove('hide');
       results.scrollIntoView({behavior:'smooth', block:'start'});
+
+      // Save to library
+      await api('/api/analyses', {
+        method:'POST',
+        body: JSON.stringify({
+          ...payload,
+          summary: out.summary,
+          focus: out.focus, drills: out.drills, comps: out.comps, raw: out
+        })
+      });
     }catch(e){
       analyzeStatus.textContent='Network error'; analyzeStatus.className='err';
       console.error(e);
@@ -369,24 +393,23 @@
   /* ================= WIRE UP ================= */
   signupBtn && (signupBtn.onclick = doSignup);
   loginBtn  && (loginBtn.onclick  = doLogin);
-</script>
-  
-<script>
-  (function () {
-    const img = document.getElementById('logo');
-    if (!img) { console.warn('Logo element #logo not found'); return; }
+  uploadBtn && (uploadBtn.onclick = doUpload);
+  analyzeBtn&& (analyzeBtn.onclick= doAnalyze);
 
-    // Use repo path on GitHub Pages project sites; use relative path elsewhere
-    const src = location.hostname.endsWith('github.io')
-      ? '/ai-soccer-frontend/ball-knowledge-high-resolution-logo.png'
-      : './ball-knowledge-high-resolution-logo.png';
-
-    img.src = src;
-
-    // Tiny debug so you can see what's happening
-    img.onload  = () => console.log('[logo] loaded:', src);
-    img.onerror = () => console.error('[logo] failed to load:', src);
-  })();
-</script>
+  /* ================= BOOTSTRAP ================= */
+  document.addEventListener('DOMContentLoaded', () => {
+    try{
+      if (getToken()){
+        hide(accountCard); show(analysisCard);
+        if (menuContainer) menuContainer.style.display='block';
+      } else {
+        if (menuContainer) menuContainer.style.display='none';
+        hide(analysisCard); show(accountCard);
+      }
+    } finally {
+      hideSplash();
+    }
+  });
+  </script>
 </body>
 </html>
