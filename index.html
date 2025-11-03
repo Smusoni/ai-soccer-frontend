@@ -194,7 +194,7 @@
       : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
 
   // Cloudinary unsigned upload
-  const CLOUD_NAME   = 'dblconpx8';
+  const CLOUD_NAME    = 'dblconpx8';
   const UPLOAD_PRESET = 'ballknowledge_unsigned';
 
   /* =================== HELPERS =================== */
@@ -203,16 +203,21 @@
   const getToken   = ()  => localStorage.getItem('bk_token');
   const clearToken = ()  => localStorage.removeItem('bk_token');
 
+  // show/hide
+  function show(el){ if(!el) return; el.classList.remove('hide'); el.style.display=''; }
+  function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
+
+  // simple fetch wrapper with logging
   async function api(path, opts = {}) {
     const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
     const t = getToken();
     if (t) headers['Authorization'] = 'Bearer ' + t;
+
+    console.log('API →', (opts.method || 'GET'), path); // debug log
+
     const r = await fetch(`${BASE}${path}`, { ...opts, headers });
     try { return await r.json(); } catch { return { ok:false, error:'Bad JSON' }; }
   }
-
-  function show(el){ if(!el) return; el.classList.remove('hide'); el.style.display=''; }
-  function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
 
   /* ================ ELEMENT REFS ================ */
   const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
@@ -244,21 +249,56 @@
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
   libraryLink.addEventListener('click', async (e)=>{
-    e.preventDefault(); menuPanel.style.display='none';
+    e.preventDefault();
+    menuPanel.style.display='none';
+
     const lib = await api('/api/analyses');
     if(!lib.ok){ return alert(lib.error||'Could not load library'); }
-    hide(accountCard); show(analysisCard);
+
+    hide(accountCard);
+    show(analysisCard);
+
+    // Reset results content so we don't append duplicates
     results.classList.remove('hide');
-    summary.innerHTML = `<strong>Your Library</strong>`;
-    focusList.innerHTML=''; drillList.innerHTML=''; comps.innerHTML='';
-    const holder = document.createElement('div');
-    holder.innerHTML = lib.items.map(i=>`
+    results.innerHTML = `
+      <h4>Your Report</h4>
+      <div id="summary" class="muted" style="margin:8px 0 12px"></div>
+      <div class="row">
+        <div class="card" style="flex:1;min-width:280px">
+          <h4>Focus Areas</h4>
+          <ul id="focusList"></ul>
+        </div>
+        <div class="card" style="flex:1;min-width:280px">
+          <h4>Suggested Drills</h4>
+          <ul id="drillList"></ul>
+        </div>
+      </div>
       <div class="card">
-        <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
-        <div style="margin:6px 0">${i.summary||''}</div>
-        <a href="${i.video_url}" target="_blank">Watch clip</a>
-      </div>`).join('');
-    results.appendChild(holder);
+        <h4>Plays Like</h4>
+        <div id="comps"></div>
+      </div>
+    `;
+
+    // Re-bind references after reset
+    window.summary   = document.getElementById('summary');
+    window.focusList = document.getElementById('focusList');
+    window.drillList = document.getElementById('drillList');
+    window.comps     = document.getElementById('comps');
+
+    summary.innerHTML = `<strong>Your Library</strong>`;
+
+    const list = document.createElement('div');
+    list.innerHTML = (lib.items && lib.items.length)
+      ? lib.items.map(i=>`
+          <div class="card">
+            <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
+            ${i.summary ? `<div style="margin:6px 0">${i.summary}</div>` : ''}
+            ${i.video_url ? `<a href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
+          </div>
+        `).join('')
+      : '<p class="muted">No saved analyses yet.</p>';
+
+    results.appendChild(list);
   });
   logoutBtn.addEventListener('click',(e)=>{
     e.preventDefault(); menuPanel.style.display='none';
@@ -289,17 +329,18 @@
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
     if (out.ok && out.token){
       setToken(out.token);
-      // Save user profile in database after signup
-await api('/api/profile', {
-  method: 'PUT',
-  body: JSON.stringify({
-    name: su_name.value.trim(),
-    age: Number(su_age.value || 0),
-    dob: su_dob.value || null
-  })
-});
-      
- setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
+
+      // Save user profile to backend (PUT supported)
+      await api('/api/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: su_name.value.trim(),
+          age: Number(su_age.value || 0),
+          dob: su_dob.value || null
+        })
+      });
+
+      setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
       proceedToAnalysis();
     } else if (out.ok && out.user){
       const li = await api('/api/login', { method:'POST', body: JSON.stringify({email:payload.email,password:payload.password}) });
@@ -316,16 +357,22 @@ await api('/api/profile', {
     if (!email || !password) return setAuthMessage('Enter email & password', false);
     setAuthMessage('Logging in…');
     const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
-    if (out.ok && out.token){ setToken(out.token);
-      // Optionally fetch the user profile to confirm it exists
-try {
-  const prof = await api('/api/profile');
-  console.log('profile →', prof);
-} catch (e) {
-  console.warn('profile fetch failed', e);
-}
- setAuthMessage('Logged in ✅'); proceedToAnalysis(); }
-    else setAuthMessage(out.error || 'Login failed', false);
+    if (out.ok && out.token){
+      setToken(out.token);
+
+      // Optional: confirm profile exists
+      try {
+        const prof = await api('/api/profile');
+        console.log('profile →', prof);
+      } catch (e) {
+        console.warn('profile fetch failed', e);
+      }
+
+      setAuthMessage('Logged in ✅', true);
+      proceedToAnalysis();
+    } else {
+      setAuthMessage(out.error || 'Login failed', false);
+    }
   }
 
   function proceedToAnalysis(){
@@ -358,6 +405,25 @@ try {
         lastVideoUrl = up.secure_url;
         uploadMsg.textContent = 'Uploaded ✅'; uploadMsg.className='ok';
         if (clipInfo) clipInfo.innerHTML = `<span class="pill">${f.name}</span><a href="${lastVideoUrl}" target="_blank">View</a>`;
+
+        // Persist clip metadata to backend (for history/library)
+        try {
+          await api('/api/clip', {
+            method: 'POST',
+            body: JSON.stringify({
+              url: up.secure_url,
+              public_id: up.public_id,
+              created_at: up.created_at,
+              bytes: up.bytes,
+              duration: up.duration,
+              width: up.width,
+              height: up.height,
+              format: up.format
+            })
+          });
+        } catch (e) {
+          console.warn('clip persist failed', e);
+        }
       } else {
         uploadMsg.textContent='Upload failed'; uploadMsg.className='err';
         console.warn('Cloudinary:', up);
@@ -410,10 +476,15 @@ try {
   }
 
   /* ================= WIRE UP ================= */
-  signupBtn && (signupBtn.onclick = doSignup);
-  loginBtn  && (loginBtn.onclick  = doLogin);
-  uploadBtn && (uploadBtn.onclick = doUpload);
-  analyzeBtn&& (analyzeBtn.onclick= doAnalyze);
+  const signupBtnEl = $('signupBtn');
+  const loginBtnEl  = $('loginBtn');
+  const uploadBtnEl = $('uploadBtn');
+  const analyzeBtnEl= $('analyzeBtn');
+
+  signupBtnEl && (signupBtnEl.onclick = doSignup);
+  loginBtnEl  && (loginBtnEl.onclick  = doLogin);
+  uploadBtnEl && (uploadBtnEl.onclick = doUpload);
+  analyzeBtnEl&& (analyzeBtnEl.onclick= doAnalyze);
 
   /* ================= BOOTSTRAP ================= */
   document.addEventListener('DOMContentLoaded', () => {
@@ -432,3 +503,4 @@ try {
   </script>
 </body>
 </html>
+
