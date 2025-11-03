@@ -288,7 +288,18 @@
     setAuthMessage('Creating your account…');
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
     if (out.ok && out.token){
-      setToken(out.token); setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
+      setToken(out.token);
+      // Save user profile in database after signup
+await api('/api/profile', {
+  method: 'PUT',
+  body: JSON.stringify({
+    name: su_name.value.trim(),
+    age: Number(su_age.value || 0),
+    dob: su_dob.value || null
+  })
+});
+      
+ setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
       proceedToAnalysis();
     } else if (out.ok && out.user){
       const li = await api('/api/login', { method:'POST', body: JSON.stringify({email:payload.email,password:payload.password}) });
@@ -305,7 +316,15 @@
     if (!email || !password) return setAuthMessage('Enter email & password', false);
     setAuthMessage('Logging in…');
     const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
-    if (out.ok && out.token){ setToken(out.token); setAuthMessage('Logged in ✅'); proceedToAnalysis(); }
+    if (out.ok && out.token){ setToken(out.token);
+      // Optionally fetch the user profile to confirm it exists
+try {
+  const prof = await api('/api/profile');
+  console.log('profile →', prof);
+} catch (e) {
+  console.warn('profile fetch failed', e);
+}
+ setAuthMessage('Logged in ✅'); proceedToAnalysis(); }
     else setAuthMessage(out.error || 'Login failed', false);
   }
 
