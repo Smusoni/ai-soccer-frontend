@@ -391,65 +391,60 @@
     const r = await fetch(url, { method:'POST', body: fd });
     return await r.json();
   }
+/* ==================== ANALYZE ==================== */
+let lastVideoUrl = '', lastPublicId = '';
 
-  /* ================= ANALYZE ================= */
-  let lastVideoUrl = '', lastPublic = '';
-
-async function doUpload(){
+async function doUpload() {
   const f = clipFile.files?.[0];
-  if (!f){
+  if (!f) {
     uploadMsg.textContent = 'Pick a video first';
     uploadMsg.className = 'err';
     return;
   }
+
   uploadMsg.textContent = 'Uploading…';
   uploadMsg.className = 'muted';
 
-  try{
+  try {
     const up = await uploadToCloudinary(f);
 
-    if (up.secure_url){
-      // Set both ids once
-      lastVideoUrl  = up.secure_url;
-      lastPublicId  = up.public_id || '';
+    if (up.secure_url) {
+      // ✅ Set both IDs
+      lastVideoUrl = up.secure_url;
+      lastPublicId = up.public_id || '';
 
-      // UI
       uploadMsg.textContent = 'Uploaded ✅';
       uploadMsg.className = 'ok';
-      if (clipInfo){
-        clipInfo.innerHTML = `<span class="pill">${f.name}</span>
-          <a href="${lastVideoUrl}" target="_blank">View</a>`;
-      }
+      if (clipInfo)
+        clipInfo.innerHTML = `<span class="pill">${f.name}</span> 
+                              <a href="${lastVideoUrl}" target="_blank">View</a>`;
 
-      // Persist metadata for library/history
-      try{
-        await api('/api/clip', {
-          method: 'POST',
-          body: JSON.stringify({
-            url: up.secure_url,
-            public_id: up.public_id,
-            created_at: up.created_at,
-            bytes: up.bytes,
-            duration: up.duration,
-            width: up.width,
-            height: up.height,
-            format: up.format
-          })
-        });
-      }catch(e){
-        console.warn('clip persist failed:', e);
-      }
+      // ✅ Save metadata to backend for history / library
+      await api('/api/clip', {
+        method: 'POST',
+        body: JSON.stringify({
+          url: up.secure_url,
+          public_id: up.public_id,
+          created_at: up.created_at || new Date().toISOString(),
+          bytes: up.bytes || f.size,
+          duration: up.duration || null,
+          width: up.width || null,
+          height: up.height || null,
+          format: up.format || f.type
+        })
+      });
     } else {
       uploadMsg.textContent = 'Upload failed';
       uploadMsg.className = 'err';
-      console.warn('Cloudinary:', up);
+      console.warn('Cloudinary upload issue:', up);
     }
-  }catch(e){
+  } catch (e) {
     uploadMsg.textContent = 'Network error';
     uploadMsg.className = 'err';
     console.error(e);
   }
 }
+
   async function doAnalyze(){
     analyzeStatus.textContent='Analyzing…'; analyzeStatus.className='muted';
     try{
