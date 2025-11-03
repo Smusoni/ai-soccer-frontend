@@ -395,45 +395,61 @@
   /* ================= ANALYZE ================= */
   let lastVideoUrl = '';
 
-  async function doUpload(){
-    const f = clipFile.files?.[0];
-    if (!f){ uploadMsg.textContent='Pick a video first'; uploadMsg.className='err'; return; }
-    uploadMsg.textContent='Uploading…'; uploadMsg.className='muted';
-    try{
-      const up = await uploadToCloudinary(f);
-      if (up.secure_url){
-        lastVideoUrl = up.secure_url;
-        uploadMsg.textContent = 'Uploaded ✅'; uploadMsg.className='ok';
-        if (clipInfo) clipInfo.innerHTML = `<span class="pill">${f.name}</span><a href="${lastVideoUrl}" target="_blank">View</a>`;
-
-        // Persist clip metadata to backend (for history/library)
-        try {
-          await api('/api/clip', {
-            method: 'POST',
-            body: JSON.stringify({
-              url: up.secure_url,
-              public_id: up.public_id,
-              created_at: up.created_at,
-              bytes: up.bytes,
-              duration: up.duration,
-              width: up.width,
-              height: up.height,
-              format: up.format
-            })
-          });
-        } catch (e) {
-          console.warn('clip persist failed', e);
-        }
-      } else {
-        uploadMsg.textContent='Upload failed'; uploadMsg.className='err';
-        console.warn('Cloudinary:', up);
-      }
-    }catch(e){
-      uploadMsg.textContent='Network error'; uploadMsg.className='err';
-      console.error(e);
-    }
+async function doUpload(){
+  const f = clipFile.files?.[0];
+  if (!f){
+    uploadMsg.textContent = 'Pick a video first';
+    uploadMsg.className = 'err';
+    return;
   }
+  uploadMsg.textContent = 'Uploading…';
+  uploadMsg.className = 'muted';
 
+  try{
+    const up = await uploadToCloudinary(f);
+
+    if (up.secure_url){
+      // Set both ids once
+      lastVideoUrl  = up.secure_url;
+      lastPublicId  = up.public_id || '';
+
+      // UI
+      uploadMsg.textContent = 'Uploaded ✅';
+      uploadMsg.className = 'ok';
+      if (clipInfo){
+        clipInfo.innerHTML = `<span class="pill">${f.name}</span>
+          <a href="${lastVideoUrl}" target="_blank">View</a>`;
+      }
+
+      // Persist metadata for library/history
+      try{
+        await api('/api/clip', {
+          method: 'POST',
+          body: JSON.stringify({
+            url: up.secure_url,
+            public_id: up.public_id,
+            created_at: up.created_at,
+            bytes: up.bytes,
+            duration: up.duration,
+            width: up.width,
+            height: up.height,
+            format: up.format
+          })
+        });
+      }catch(e){
+        console.warn('clip persist failed:', e);
+      }
+    } else {
+      uploadMsg.textContent = 'Upload failed';
+      uploadMsg.className = 'err';
+      console.warn('Cloudinary:', up);
+    }
+  }catch(e){
+    uploadMsg.textContent = 'Network error';
+    uploadMsg.className = 'err';
+    console.error(e);
+  }
+}
   async function doAnalyze(){
     analyzeStatus.textContent='Analyzing…'; analyzeStatus.className='muted';
     try{
@@ -443,6 +459,7 @@
         foot: footEl.value,
         position: positionEl.value,
         videoUrl: lastVideoUrl
+        publicId: lastPublicId
       };
       if (!payload.videoUrl){
         analyzeStatus.textContent='Upload a clip first'; analyzeStatus.className='err'; return;
