@@ -393,7 +393,7 @@
   }
 
   /* ================= ANALYZE ================= */
-  let lastVideoUrl = '';
+  let lastVideoUrl = '', lastPublic = '';
 
 async function doUpload(){
   const f = clipFile.files?.[0];
@@ -458,7 +458,7 @@ async function doUpload(){
         weight: Number(weightEl.value||0),
         foot: footEl.value,
         position: positionEl.value,
-        videoUrl: lastVideoUrl
+        videoUrl: lastVideoUrl,
         publicId: lastPublicId
       };
       if (!payload.videoUrl){
