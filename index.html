@@ -248,15 +248,39 @@
     hide(accountCard); show(analysisCard); hide(results);
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
-  libraryLink.addEventListener('click', async (e)=>{
-    e.preventDefault();
-    menuPanel.style.display='none';
+ libraryLink.addEventListener('click', async (e)=>{
+  e.preventDefault();
+  menuPanel.style.display='none';
 
-    const lib = await api('/api/analyses');
-    if(!lib.ok){ return alert(lib.error||'Could not load library'); }
+  const lib = await api('/api/analyses');
+  if(!lib.ok){ return alert(lib.error || 'Could not load library'); }
 
-    hide(accountCard);
-    show(analysisCard);
+  hide(accountCard);
+  show(analysisCard);
+
+  // ✅ Clear results so we don’t append duplicates
+  results.innerHTML = `
+    <h4>Your Library</h4>
+    <p class="muted">Click a report to view or delete it.</p>
+  `;
+
+  // ✅ Render list of analyses with “View” and “Delete” options
+  lib.items.forEach(i=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <div style="font-size:12px" class="muted">${new Date(i.created_at).toLocaleString()}</div>
+      <div>${i.summary || '(no summary)'}</div>
+      <div style="margin-top:6px">
+        <a href="#" data-id="${i.id}" data-action="view">View</a> |
+        <a href="#" data-id="${i.id}" data-action="delete" style="color:#ff6b6b">Delete</a>
+      </div>
+    `;
+    results.appendChild(div);
+  });
+
+  results.classList.remove('hide');
+});
 
     // Reset results content so we don't append duplicates
     results.classList.remove('hide');
@@ -486,6 +510,129 @@ async function doUpload() {
       console.error(e);
     }
   }
+    
+// ================= LIBRARY (details + delete) =================
+let libraryCache = []; // in-memory list of saved analyses
+
+function renderLibrary(items){
+  hide(accountCard); show(analysisCard);
+  results.classList.remove('hide');
+
+  summary.innerHTML = `<strong>Your Library</strong>`;
+  focusList.innerHTML = '';
+  drillList.innerHTML = '';
+  comps.innerHTML = '';
+
+  // Build the library list
+  const holder = document.createElement('div');
+  holder.id = 'libraryList';
+  holder.innerHTML = items.length
+    ? items.map(i => `
+        <div class="card" data-id="${i.id}">
+          <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
+          <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
+          <div class="row" style="gap:8px">
+            ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
+            <button class="block-btn" style="flex:0 0 auto;padding:6px 10px" data-action="view" data-id="${i.id}">View</button>
+            <button class="block-btn" style="flex:0 0 auto;padding:6px 10px;background:#ff6b6b" data-action="delete" data-id="${i.id}">Delete</button>
+          </div>
+        </div>
+      `).join('')
+    : `<div class="muted">No saved analyses yet. Upload a clip and press Analyze to create one.</div>`;
+
+  // Clear any previous library block to avoid duplicates
+  const prev = document.getElementById('libraryList');
+  if (prev && prev.parentNode) prev.parentNode.remove();
+
+  // Add to the RESULTS container (after summary area)
+  results.appendChild(holder);
+}
+
+// GET /api/analyses then render
+async function loadLibrary(){
+  try{
+    const res = await api('/api/analyses');
+    if (!res.ok) throw new Error(res.error || 'Failed to load library');
+    libraryCache = res.items || [];
+    renderLibrary(libraryCache);
+  }catch(e){
+    alert(e.message || 'Could not load library');
+  }
+}
+
+// GET /api/analyses/:id and show full saved analysis
+async function viewAnalysis(id){
+  try{
+    const res = await api(`/api/analyses/${id}`);
+    if (!res.ok) throw new Error(res.error || 'Not found');
+
+    // Fill the results UI with the saved payload
+    hide(accountCard); show(analysisCard);
+    results.classList.remove('hide');
+
+    const a = res.item || {};
+    summary.textContent = a.summary || 'Summary not available.';
+    focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
+    drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+    comps.innerHTML     = (a.comps  || []).map(c=>`<span class="pill">${c}</span>`).join('');
+
+    // Add a small back link to go to the library list
+    const back = document.createElement('div');
+    back.className = 'muted';
+    back.style.marginTop = '8px';
+    back.innerHTML = `<a href="#" id="backToLibrary">← Back to Library</a> ${a.video_url ? `&nbsp;|&nbsp; <a href="${a.video_url}" target="_blank">Open clip</a>` : ''}`;
+    results.appendChild(back);
+
+    document.getElementById('backToLibrary')?.addEventListener('click', (e)=>{
+      e.preventDefault();
+      renderLibrary(libraryCache);
+    });
+  }catch(e){
+    alert(e.message || 'Could not open analysis');
+  }
+}
+
+// DELETE /api/analyses/:id then refresh
+async function deleteAnalysis(id){
+  if (!confirm('Delete this analysis?')) return;
+  try{
+    const res = await api(`/api/analyses/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(res.error || 'Delete failed');
+    libraryCache = libraryCache.filter(x => x.id !== id);
+    renderLibrary(libraryCache);
+  }catch(e){
+    alert(e.message || 'Could not delete');
+  }
+}
+
+// Event delegation for the Library list buttons
+document.addEventListener('click', (e)=>{
+  const t = e.target;
+  if (!(t instanceof HTMLElement)) return;
+  const action = t.getAttribute('data-action');
+  const id = t.getAttribute('data-id');
+  if (!action || !id) return;
+
+  if (action === 'view'){
+    e.preventDefault();
+    viewAnalysis(id);
+  } else if (action === 'delete'){
+    e.preventDefault();
+    deleteAnalysis(id);
+  }
+});
+try {
+  await api('/api/analyses', {
+    method:'POST',
+    body: JSON.stringify({
+      ...payload,
+      summary: out.summary,
+      focus: out.focus, drills: out.drills, comps: out.comps, raw: out
+    })
+  });
+  // quietly refresh the cache in the background
+  api('/api/analyses').then(x => { if (x?.ok) libraryCache = x.items; }).catch(()=>{});
+} catch {}
 
   /* ================= WIRE UP ================= */
   const signupBtnEl = $('signupBtn');
