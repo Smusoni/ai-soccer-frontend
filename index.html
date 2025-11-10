@@ -43,7 +43,7 @@
     /* ================= Hamburger Menu ================= */
     .menu-container{position:fixed;top:20px;right:30px;z-index:1000;display:none}
     .menu-icon{font-size:28px;cursor:pointer;color:white;user-select:none;background-color:#111;border-radius:8px;padding:6px 10px;box-shadow:0 0 8px rgba(0,0,0,0.3)}
-    .menu{display:none;flex-direction:column;position:absolute;right:0;background-color:#111;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.4);padding:10px 0;min-width:150px;z-index:10}
+    .menu{display:none;flex-direction:column;position:absolute;right:0;background-color:#111;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.4);padding:10px 0;min-width:150px;z-index:10;max-height:70vh;overflow:auto}
     .menu a{color:white;text-decoration:none;padding:10px 16px;display:block}
     .menu a:hover{background-color:#333}
 
@@ -52,6 +52,7 @@
     .app-header .brand{display:flex;align-items:center;gap:10px}
     #logo{height:36px;width:auto;display:block}
     @media (min-width:720px){#logo{height:42px}}
+    #logoutTop{display:none}
 
     /* ================= Overlay Fix ================= */
     #accountCard, #analysisCard, #libraryPage, .menu-container{position:relative;z-index:10}
@@ -78,9 +79,9 @@
       <h1>Ball Knowledge</h1>
     </div>
 
-    <!-- Optional: a simple “page tag” for future router (no JS needed yet) -->
-    <nav aria-label="breadcrumbs">
+    <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
       <a id="pageTag" class="muted" style="text-decoration:none; font-size:14px">Analysis</a>
+      <button id="logoutTop" class="pill">Log out</button>
     </nav>
 
     <script>
@@ -199,8 +200,7 @@
     <div id="libraryList"></div>
   </section>
 
-  <!-- Everything below is your existing JS; we’ll update this script after you send the JS-only block -->
-<script>
+  <script>
   /* =================== CONFIG =================== */
   const BASE =
     location.hostname.endsWith('github.io')
@@ -240,6 +240,7 @@
   const libraryPage = $('libraryPage');
   const libraryList = $('libraryList');
   const pageTag     = $('pageTag'); // small breadcrumb text in the header
+  const logoutTop   = $('logoutTop'); // header fallback logout
 
   // splash
   const splash = document.getElementById('splash');
@@ -277,7 +278,7 @@
     else { setHash('analysis'); }
   });
 
-  // Update menu handlers to route instead of stacking
+  // Menu -> routes
   newAnalysisLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
@@ -353,16 +354,24 @@
 
   function proceedToAnalysis(){
     setHash('analysis'); // route to analysis page
+    if (menuContainer) menuContainer.style.display='block';
+    if (logoutTop) logoutTop.style.display = 'inline-block';
     hideSplash();
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 
-  logoutBtn.addEventListener('click',(e)=>{
-    e.preventDefault(); menuPanel.style.display='none';
-    clearToken(); if (menuContainer) menuContainer.style.display='none';
+  /* ============== LOGOUT (menu + header) ============== */
+  function doLogout() {
+    clearToken();
+    try { menuPanel.style.display = 'none'; } catch {}
+    try { menuContainer.style.display = 'none'; } catch {}
+    if (logoutTop) logoutTop.style.display = 'none';
     setHash('account');
-    goTo('account'); hide(results);
-  });
+    goTo('account');
+    hide(results);
+  }
+  if (logoutBtn) logoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
+  if (logoutTop) logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
 
   /* ============== CLOUDINARY UPLOAD ============== */
   async function uploadToCloudinary(file){
@@ -565,18 +574,19 @@
     try{
       if (getToken()){
         if (menuContainer) menuContainer.style.display='block';
-        // Resolve initial route or default to analysis
+        if (logoutTop) logoutTop.style.display = 'inline-block';
         const page = currentHash();
         if (page === 'library') { loadLibrary(); }
         else { setHash('analysis'); }
       } else {
         if (menuContainer) menuContainer.style.display='none';
+        if (logoutTop) logoutTop.style.display = 'none';
         goTo('account');
       }
     } finally {
       hideSplash();
     }
   });
-</script>
+  </script>
 </body>
 </html>
