@@ -48,22 +48,23 @@
     .menu a:hover{background-color:#333}
 
     /* ================= Header / Logo ================= */
+    .app-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .app-header .brand{display:flex;align-items:center;gap:10px}
     #logo{height:36px;width:auto;display:block}
     @media (min-width:720px){#logo{height:42px}}
 
     /* ================= Overlay Fix ================= */
-    #accountCard, #analysisCard, .menu-container{position:relative;z-index:10}
+    #accountCard, #analysisCard, #libraryPage, .menu-container{position:relative;z-index:10}
   </style>
 </head>
 <body>
   <!-- Hamburger Menu -->
   <div class="menu-container">
-    <div class="menu-icon" id="menuIcon">&#9776;</div>
-    <div class="menu" id="menu">
-      <a href="#" id="newAnalysis">New Analysis</a>
-      <a href="#" id="library">Library</a>
-      <a href="#" id="logout">Logout</a>
+    <div class="menu-icon" id="menuIcon" aria-label="Open menu" role="button">&#9776;</div>
+    <div class="menu" id="menu" role="menu">
+      <a href="#" id="newAnalysis" role="menuitem">New Analysis</a>
+      <a href="#" id="library" role="menuitem">Library</a>
+      <a href="#" id="logout" role="menuitem">Logout</a>
     </div>
   </div>
 
@@ -76,8 +77,14 @@
       <img id="logo" alt="Ball Knowledge Logo">
       <h1>Ball Knowledge</h1>
     </div>
-    <p class="muted">Analyze. Learn. Evolve.</p>
+
+    <!-- Optional: a simple “page tag” for future router (no JS needed yet) -->
+    <nav aria-label="breadcrumbs">
+      <a id="pageTag" class="muted" style="text-decoration:none; font-size:14px">Analysis</a>
+    </nav>
+
     <script>
+      // Set the logo path deterministically so it works locally and on GitHub Pages
       (function () {
         const el = document.getElementById('logo');
         if (!el) return;
@@ -185,6 +192,14 @@
     </div>
   </section>
 
+  <!-- =========== LIBRARY PAGE (separate screen) =========== -->
+  <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
+    <h3 id="libraryTitle">Your Library</h3>
+    <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
+    <div id="libraryList"></div>
+  </section>
+
+  <!-- Everything below is your existing JS; we’ll update this script after you send the JS-only block -->
   <script>
   /* =================== CONFIG =================== */
   const BASE =
@@ -414,7 +429,9 @@
     }
   }
 
-  /* ================= LIBRARY (details + delete) ================= */
+  /* ================= LIBRARY (details + delete) =================
+     NOTE: this still renders into the Analysis section for now.
+     After you send me your JS-only block, I’ll switch these to use #libraryPage. */
   let libraryCache = [];
 
   function renderLibrary(items){
@@ -472,17 +489,6 @@
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
       drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
       comps.innerHTML     = (a.comps  || []).map(c=>`<span class="pill">${c}</span>`).join('');
-
-      const back = document.createElement('div');
-      back.className = 'muted';
-      back.style.marginTop = '8px';
-      back.innerHTML = `<a href="#" id="backToLibrary">← Back to Library</a> ${a.video_url ? `&nbsp;|&nbsp; <a href="${a.video_url}" target="_blank">Open clip</a>` : ''}`;
-      results.appendChild(back);
-
-      document.getElementById('backToLibrary')?.addEventListener('click', (e)=>{
-        e.preventDefault();
-        renderLibrary(libraryCache);
-      });
     }catch(e){
       alert(e.message || 'Could not open analysis');
     }
@@ -517,7 +523,7 @@
     }
   });
 
-  // Hook Library menu item to loadLibrary()
+  // Temporary: current Library button keeps using the in-analysis render
   libraryLink.addEventListener('click', async (e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
