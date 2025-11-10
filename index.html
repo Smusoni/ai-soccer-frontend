@@ -200,7 +200,7 @@
   </section>
 
   <!-- Everything below is your existing JS; we’ll update this script after you send the JS-only block -->
-  <script>
+<script>
   /* =================== CONFIG =================== */
   const BASE =
     location.hostname.endsWith('github.io')
@@ -236,6 +236,11 @@
   const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
   const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList'), comps=$('comps');
 
+  // NEW: Library page refs
+  const libraryPage = $('libraryPage');
+  const libraryList = $('libraryList');
+  const pageTag     = $('pageTag'); // small breadcrumb text in the header
+
   // splash
   const splash = document.getElementById('splash');
   function hideSplash(){ if (splash) splash.style.display='none'; }
@@ -252,11 +257,38 @@
   window.addEventListener('click',(e)=>{
     if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){ menuPanel.style.display='none'; }
   });
+
+  /* =================== MINI ROUTER =================== */
+  function goTo(screen){ // 'analysis' | 'library' | 'account'
+    hide(accountCard); hide(analysisCard); hide(libraryPage);
+    if (screen === 'analysis') { show(analysisCard); if (pageTag) pageTag.textContent='Analysis'; }
+    else if (screen === 'library') { show(libraryPage); if (pageTag) pageTag.textContent='Library'; }
+    else { show(accountCard); if (pageTag) pageTag.textContent='Account'; }
+    if (screen !== 'account' && menuContainer) menuContainer.style.display='block';
+  }
+  function setHash(screen){ location.hash = `#/${screen}`; }
+  function currentHash(){ return (location.hash || '').replace(/^#\//,''); }
+
+  window.addEventListener('hashchange', () => {
+    const page = currentHash();
+    if (!getToken()) { goTo('account'); return; }
+    if (page === 'library') { loadLibrary(); }
+    else if (page === 'analysis') { goTo('analysis'); }
+    else { setHash('analysis'); }
+  });
+
+  // Update menu handlers to route instead of stacking
   newAnalysisLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
-    hide(accountCard); show(analysisCard); hide(results);
+    setHash('analysis');
+    hide(results); // start fresh on analysis
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
+  });
+  libraryLink.addEventListener('click', (e)=>{
+    e.preventDefault();
+    menuPanel.style.display='none';
+    setHash('library'); // hashchange will trigger loadLibrary()
   });
 
   /* ================= AUTH ================= */
@@ -320,11 +352,17 @@
   }
 
   function proceedToAnalysis(){
-    hide(accountCard); show(analysisCard);
-    if (menuContainer) menuContainer.style.display='block';
+    setHash('analysis'); // route to analysis page
     hideSplash();
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
+
+  logoutBtn.addEventListener('click',(e)=>{
+    e.preventDefault(); menuPanel.style.display='none';
+    clearToken(); if (menuContainer) menuContainer.style.display='none';
+    setHash('account');
+    goTo('account'); hide(results);
+  });
 
   /* ============== CLOUDINARY UPLOAD ============== */
   async function uploadToCloudinary(file){
@@ -429,23 +467,12 @@
     }
   }
 
-  /* ================= LIBRARY (details + delete) =================
-     NOTE: this still renders into the Analysis section for now.
-     After you send me your JS-only block, I’ll switch these to use #libraryPage. */
+  /* ================ LIBRARY (its own page) ================ */
   let libraryCache = [];
 
   function renderLibrary(items){
-    hide(accountCard); show(analysisCard);
-    results.classList.remove('hide');
-
-    summary.innerHTML = `<strong>Your Library</strong>`;
-    focusList.innerHTML = '';
-    drillList.innerHTML = '';
-    comps.innerHTML = '';
-
-    const holder = document.createElement('div');
-    holder.id = 'libraryList';
-    holder.innerHTML = items.length
+    goTo('library');
+    libraryList.innerHTML = items.length
       ? items.map(i => `
           <div class="card" data-id="${i.id}">
             <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
@@ -458,11 +485,6 @@
           </div>
         `).join('')
       : `<div class="muted">No saved analyses yet. Upload a clip and press Analyze to create one.</div>`;
-
-    const prev = document.getElementById('libraryList');
-    if (prev && prev.parentNode) prev.parentNode.remove();
-
-    results.appendChild(holder);
   }
 
   async function loadLibrary(){
@@ -481,14 +503,18 @@
       const res = await api(`/api/analyses/${id}`);
       if (!res.ok) throw new Error(res.error || 'Not found');
 
-      hide(accountCard); show(analysisCard);
-      results.classList.remove('hide');
+      // Show the Analysis page for detail view
+      goTo('analysis');
 
       const a = res.item || {};
       summary.textContent = a.summary || 'Summary not available.';
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
       drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
       comps.innerHTML     = (a.comps  || []).map(c=>`<span class="pill">${c}</span>`).join('');
+
+      results.classList.remove('hide');
+      results.scrollIntoView({ behavior:'smooth', block:'start' });
+
     }catch(e){
       alert(e.message || 'Could not open analysis');
     }
@@ -523,19 +549,6 @@
     }
   });
 
-  // Temporary: current Library button keeps using the in-analysis render
-  libraryLink.addEventListener('click', async (e)=>{
-    e.preventDefault();
-    menuPanel.style.display='none';
-    await loadLibrary();
-  });
-
-  logoutBtn.addEventListener('click',(e)=>{
-    e.preventDefault(); menuPanel.style.display='none';
-    clearToken(); if (menuContainer) menuContainer.style.display='none';
-    hide(analysisCard); show(accountCard); hide(results);
-  });
-
   /* ================= WIRE UP ================= */
   const signupBtnEl = $('signupBtn');
   const loginBtnEl  = $('loginBtn');
@@ -551,16 +564,19 @@
   document.addEventListener('DOMContentLoaded', () => {
     try{
       if (getToken()){
-        hide(accountCard); show(analysisCard);
         if (menuContainer) menuContainer.style.display='block';
+        // Resolve initial route or default to analysis
+        const page = currentHash();
+        if (page === 'library') { loadLibrary(); }
+        else { setHash('analysis'); }
       } else {
         if (menuContainer) menuContainer.style.display='none';
-        hide(analysisCard); show(accountCard);
+        goTo('account');
       }
     } finally {
       hideSplash();
     }
   });
-  </script>
+</script>
 </body>
 </html>
