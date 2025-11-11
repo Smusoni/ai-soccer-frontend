@@ -53,6 +53,13 @@
     #logo{height:36px;width:auto;display:block}
     @media (min-width:720px){#logo{height:42px}}
     #logoutTop{display:none}
+    
+    /* Ensure the menu icon is always visible on narrow desktop widths */
+@media (max-width: 1400px){
+  .menu-container{ display:block !important; right:16px; top:16px; }
+}
+/* If a parent ever clips it, make sure we can see it */
+.app-header, header, body{ overflow: visible; }
 
     /* ================= Overlay Fix ================= */
     #accountCard, #analysisCard, #libraryPage, .menu-container{position:relative;z-index:10}
