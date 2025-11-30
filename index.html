@@ -58,7 +58,6 @@
     @media (max-width: 1400px){
       .menu-container{ display:block !important; right:16px; top:16px; }
     }
-    /* If a parent ever clips it, make sure we can see it */
     .app-header, header, body{ overflow: visible; }
 
     /* ================= Overlay Fix ================= */
@@ -79,7 +78,7 @@
   <!-- Splash -->
   <div id="splash"><div class="pulse"></div></div>
 
-  <!-- Header with brand + LOGO (src set by script below) -->
+  <!-- Header with brand + LOGO -->
   <header class="container app-header">
     <div class="brand">
       <img id="logo" alt="Ball Knowledge Logo">
@@ -92,7 +91,6 @@
     </nav>
 
     <script>
-      // Set the logo path deterministically so it works locally and on GitHub Pages
       (function () {
         const el = document.getElementById('logo');
         if (!el) return;
@@ -102,7 +100,7 @@
     </script>
   </header>
 
-  <!-- =========== ACCOUNT (only visible after splash) =========== -->
+  <!-- =========== ACCOUNT =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
     <div class="grid">
@@ -131,7 +129,7 @@
     <p id="authMsg" class="muted"></p>
   </section>
 
-  <!-- =========== ANALYSIS (hidden until logged in) =========== -->
+  <!-- =========== ANALYSIS =========== -->
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
 
@@ -140,15 +138,17 @@
       <div class="card" style="margin:0">
         <h4>Attributes</h4>
         <div class="row">
-          <input id="height_feet" type="number" placeholder="Height (ft)">
-          <input id="height_inches" type="number" placeholder="Height (in)" min="0" max="11">
-          <input id="weight" type="number" placeholder="Weight (lbs)">
+          <input id="heightFeet" type="number" placeholder="Height (feet)">
+          <input id="heightInches" type="number" placeholder="Height (inches)">
         </div>
         <div class="row">
+          <input id="weight" type="number" placeholder="Weight (lbs)">
           <select id="foot">
             <option value="" disabled selected>Dominant Foot</option>
             <option>Right</option><option>Left</option><option>Both</option>
           </select>
+        </div>
+        <div class="row">
           <select id="position">
             <option value="" disabled selected>Position</option>
             <option>Goalkeeper</option>
@@ -160,7 +160,7 @@
         <div class="row">
           <input id="skill" type="text" placeholder="What skill are you working on? (e.g. finishing, 1v1 dribbling)">
         </div>
-        <p class="muted">We’ll pair this with your clip to give coaching feedback and drills for that specific skill.</p>
+        <p class="muted">We’ll pair these with your video to personalize feedback & drills.</p>
       </div>
 
       <!-- Video upload -->
@@ -196,11 +196,10 @@
           <ul id="drillList"></ul>
         </div>
       </div>
-      <!-- "Plays Like" removed for Part 1 -->
     </div>
   </section>
 
-  <!-- =========== LIBRARY PAGE (separate screen) =========== -->
+  <!-- =========== LIBRARY PAGE =========== -->
   <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
     <h3 id="libraryTitle">Your Library</h3>
     <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
@@ -214,7 +213,6 @@
       ? 'https://ai-soccer-backend-2-production.up.railway.app'
       : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
 
-  // Cloudinary unsigned upload
   const CLOUD_NAME    = 'dblconpx8';
   const UPLOAD_PRESET = 'ballknowledge_unsigned';
 
@@ -238,23 +236,20 @@
 
   /* ================ ELEMENT REFS ================ */
   const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
-  const heightFeetEl=$('height_feet'), heightInchesEl=$('height_inches'),
+  const heightFeetEl=$('heightFeet'), heightInchesEl=$('heightInches'),
         weightEl=$('weight'), footEl=$('foot'), positionEl=$('position'), skillEl=$('skill');
   const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
   const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
   const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList');
 
-  // Library page refs
   const libraryPage = $('libraryPage');
   const libraryList = $('libraryList');
   const pageTag     = $('pageTag');
   const logoutTop   = $('logoutTop');
 
-  // splash
   const splash = document.getElementById('splash');
   function hideSplash(){ if (splash) splash.style.display='none'; }
 
-  // menu
   const menuContainer=document.querySelector('.menu-container');
   const menuIcon=$('menuIcon'), menuPanel=$('menu');
   const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
@@ -286,18 +281,17 @@
     else { setHash('analysis'); }
   });
 
-  // Menu -> routes
   newAnalysisLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
     setHash('analysis');
-    hide(results); // start fresh on analysis
+    hide(results);
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
   libraryLink.addEventListener('click', (e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
-    setHash('library'); // hashchange will trigger loadLibrary()
+    setHash('library');
   });
 
   /* ================= AUTH ================= */
@@ -307,20 +301,32 @@
         su_age=$('su_age'),   su_dob=$('su_dob'),
         li_email=$('li_email'), li_password=$('li_password');
 
-  // Fill the form from an existing profile so you don't have to retype each time
-  function populateFromProfile(profile){
-    if (!profile) return;
-    const h = Number(profile.height || 0);
-    if (h > 0 && heightFeetEl && heightInchesEl){
-      const ft = Math.floor(h / 12);
-      const inch = h % 12;
-      heightFeetEl.value = ft || '';
-      heightInchesEl.value = inch || '';
+  async function hydrateProfile() {
+    try{
+      const res = await api('/api/profile');
+      if (!res || !res.ok || !res.profile) return;
+      const p = res.profile;
+
+      if (p.height){
+        const total = Number(p.height || 0);
+        const ft = Math.floor(total/12);
+        const inch = total % 12;
+        heightFeetEl.value = ft || '';
+        heightInchesEl.value = inch || '';
+      }
+      if (p.weight != null) weightEl.value = p.weight;
+      if (p.foot) {
+        footEl.value = p.foot;
+      }
+      if (p.position) {
+        positionEl.value = p.position;
+      }
+      if (p.skill) {
+        skillEl.value = p.skill;
+      }
+    }catch(e){
+      console.warn('hydrateProfile error', e);
     }
-    if (profile.weight != null && weightEl) weightEl.value = profile.weight;
-    if (profile.foot && footEl) footEl.value = profile.foot;
-    if (profile.position && positionEl) positionEl.value = profile.position;
-    if (profile.skill && skillEl) skillEl.value = profile.skill;
   }
 
   async function doSignup(){
@@ -339,13 +345,12 @@
     if (out.ok && out.token){
       setToken(out.token);
 
-      // Save basic profile to backend
       await api('/api/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          name: su_name.value.trim(),
-          age: Number(su_age.value || 0),
-          dob: su_dob.value || null
+          name: payload.name,
+          age: payload.age,
+          dob: payload.dob
         })
       });
 
@@ -368,10 +373,7 @@
     const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
     if (out.ok && out.token){
       setToken(out.token);
-      try { 
-        const prof = await api('/api/profile');
-        if (prof.ok && prof.profile) populateFromProfile(prof.profile);
-      } catch {}
+      try { await api('/api/profile'); } catch {}
       setAuthMessage('Logged in ✅', true);
       proceedToAnalysis();
     } else {
@@ -379,22 +381,15 @@
     }
   }
 
-  async function proceedToAnalysis(){
-    setHash('analysis'); // route to analysis page
+  function proceedToAnalysis(){
+    setHash('analysis');
     if (menuContainer) menuContainer.style.display='block';
     if (logoutTop) logoutTop.style.display = 'inline-block';
-
-    // Pull latest profile so fields stay sticky across sessions
-    try {
-      const prof = await api('/api/profile');
-      if (prof.ok && prof.profile) populateFromProfile(prof.profile);
-    } catch(e){ console.error(e); }
-
     hideSplash();
+    hydrateProfile();
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 
-  /* ============== LOGOUT (menu + header) ============== */
   function doLogout() {
     clearToken();
     try { menuPanel.style.display = 'none'; } catch {}
@@ -439,11 +434,11 @@
 
         uploadMsg.textContent = 'Uploaded ✅';
         uploadMsg.className = 'ok';
-        if (clipInfo)
+        if (clipInfo) {
           clipInfo.innerHTML = `<span class="pill">${f.name}</span> 
                                 <a href="${lastVideoUrl}" target="_blank">View</a>`;
+        }
 
-        // persist clip metadata
         await api('/api/clip', {
           method: 'POST',
           body: JSON.stringify({
@@ -470,56 +465,48 @@
   }
 
   async function doAnalyze(){
-    analyzeStatus.textContent='Analyzing…'; analyzeStatus.className='muted';
+    analyzeStatus.textContent='Analyzing…';
+    analyzeStatus.className='muted';
     try{
       const payload = {
-        heightFeet: Number(heightFeetEl.value || 0) || null,
-        heightInches: Number(heightInchesEl.value || 0) || null,
-        weight: Number(weightEl.value||0) || null,
-        foot: footEl.value || '',
-        position: positionEl.value || '',
+        heightFeet: Number(heightFeetEl.value || 0),
+        heightInches: Number(heightInchesEl.value || 0),
+        weight: Number(weightEl.value||0),
+        foot: footEl.value,
+        position: positionEl.value,
         videoUrl: lastVideoUrl,
         publicId: lastPublicId,
-        skill: (skillEl.value || '').trim()
+        skill: skillEl.value.trim() || null
       };
       if (!payload.videoUrl){
-        analyzeStatus.textContent='Upload a clip first'; analyzeStatus.className='err'; return;
+        analyzeStatus.textContent='Upload a clip first';
+        analyzeStatus.className='err';
+        return;
       }
-
       const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
-      if (!out.ok){ 
-        analyzeStatus.textContent = out.error || 'Analyze failed'; 
-        analyzeStatus.className='err'; 
-        return; 
+      if (!out.ok){
+        analyzeStatus.textContent = out.error || 'Analyze failed';
+        analyzeStatus.className='err';
+        return;
       }
 
       summary.textContent = out.summary || 'Summary not available.';
       focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
       drillList.innerHTML = (out.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
 
-      analyzeStatus.textContent='Done ✅'; analyzeStatus.className='ok';
+      analyzeStatus.textContent='Done ✅';
+      analyzeStatus.className='ok';
       results.classList.remove('hide');
       results.scrollIntoView({behavior:'smooth', block:'start'});
 
-      // save to library (includes skill + heightFeet/Inches but backend mostly cares about skill)
-      await api('/api/analyses', {
-        method:'POST',
-        body: JSON.stringify({
-          ...payload,
-          summary: out.summary,
-          focus: out.focus, 
-          drills: out.drills, 
-          comps: out.comps,   // still stored but not shown
-          raw: out
-        })
-      });
     }catch(e){
-      analyzeStatus.textContent='Network error'; analyzeStatus.className='err';
+      analyzeStatus.textContent='Network error';
+      analyzeStatus.className='err';
       console.error(e);
     }
   }
 
-  /* ================ LIBRARY (its own page) ================ */
+  /* ================ LIBRARY ================ */
   let libraryCache = [];
 
   function renderLibrary(items){
@@ -529,7 +516,6 @@
           <div class="card" data-id="${i.id}">
             <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
             <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
-            ${i.skill ? `<div class="muted" style="font-size:12px">Skill: ${i.skill}</div>` : ''}
             <div class="row" style="gap:8px">
               ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
               <button class="block-btn" style="flex:0 0 auto;padding:6px 10px" data-action="view" data-id="${i.id}">View</button>
@@ -556,7 +542,6 @@
       const res = await api(`/api/analyses/${id}`);
       if (!res.ok) throw new Error(res.error || 'Not found');
 
-      // Show the Analysis page for detail view
       goTo('analysis');
 
       const a = res.item || {};
@@ -584,7 +569,6 @@
     }
   }
 
-  // Event delegation for library buttons
   document.addEventListener('click', (e)=>{
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
@@ -618,14 +602,8 @@
       if (getToken()){
         if (menuContainer) menuContainer.style.display='block';
         if (logoutTop) logoutTop.style.display = 'inline-block';
-
-        // Load profile on reload so attributes are sticky
-        try {
-          const prof = await api('/api/profile');
-          if (prof.ok && prof.profile) populateFromProfile(prof.profile);
-        } catch (e) { console.error(e); }
-
         const page = currentHash();
+        await hydrateProfile();
         if (page === 'library') { loadLibrary(); }
         else { setHash('analysis'); }
       } else {
