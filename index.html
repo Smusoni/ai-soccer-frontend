@@ -17,7 +17,7 @@
     .card{background:var(--card);border-radius:14px;padding:18px;margin:16px 0;border:1px solid var(--line)}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     input,select,button{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f0f0f;color:var(--text)}
-    input,select{min-width:180px}
+    input,select{min-width:220px}
     input::placeholder{color:#8a8f98}
     button{border:none;background:linear-gradient(90deg,#00ff95,#19d3ff);color:#000;font-weight:700;cursor:pointer}
     h1{font-size:36px;margin:8px 0;text-shadow:0 0 15px rgba(0,255,149,.35)}
@@ -50,10 +50,10 @@
     @media (min-width:720px){#logo{height:42px}}
     #logoutTop{display:none}
 
-    @media (max-width:1400px){
-      .menu-container{display:block!important;right:16px;top:16px;}
+    @media (max-width: 1400px){
+      .menu-container{ display:block !important; right:16px; top:16px; }
     }
-    .app-header, header, body{overflow:visible;}
+    .app-header, header, body{ overflow: visible; }
 
     #accountCard, #analysisCard, #libraryPage, .menu-container{position:relative;z-index:10}
   </style>
@@ -72,7 +72,7 @@
   <!-- Splash -->
   <div id="splash"><div class="pulse"></div></div>
 
-  <!-- Header with logo -->
+  <!-- Header -->
   <header class="container app-header">
     <div class="brand">
       <img id="logo" alt="Ball Knowledge Logo">
@@ -123,24 +123,28 @@
     <p id="authMsg" class="muted"></p>
   </section>
 
-  <!-- =========== NEW ANALYSIS =========== -->
+  <!-- =========== ANALYSIS =========== -->
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
 
     <div class="grid">
       <!-- Attributes -->
       <div class="card" style="margin:0">
-        <h4>Player + Session Info</h4>
+        <h4>Player & Session Info</h4>
         <div class="row">
           <input id="heightFeet" type="number" placeholder="Height (ft)">
           <input id="heightInches" type="number" placeholder="Height (in)">
-          <input id="weight" type="number" placeholder="Weight (lbs)">
         </div>
         <div class="row">
+          <input id="weight" type="number" placeholder="Weight (lbs)">
           <select id="foot">
             <option value="" disabled selected>Dominant Foot</option>
-            <option>Right</option><option>Left</option><option>Both</option>
+            <option>Right</option>
+            <option>Left</option>
+            <option>Both</option>
           </select>
+        </div>
+        <div class="row">
           <select id="position">
             <option value="" disabled selected>Position</option>
             <option>Goalkeeper</option>
@@ -148,11 +152,9 @@
             <option>Defensive Mid</option><option>Central Mid</option><option>Attacking Mid</option>
             <option>Right Wing</option><option>Left Wing</option><option>Striker</option>
           </select>
+          <input id="skill" type="text" placeholder="What skill are you working on? (e.g. finishing, 1v1, scanning)">
         </div>
-        <div class="row">
-          <input id="skill" type="text" placeholder="What skill is this clip working on? (shooting, dribbling, passing...)">
-        </div>
-        <p class="muted">These details + your clip help tailor feedback and drills to you.</p>
+        <p class="muted">We’ll pair this with your video to personalize feedback & drills.</p>
       </div>
 
       <!-- Video upload -->
@@ -171,10 +173,10 @@
     <div class="row" style="margin-top:12px;align-items:center">
       <button id="analyzeBtn">Analyze</button>
       <span id="analyzeStatus" class="muted"></span>
-      <a href="#" id="viewLastLink" class="muted hide" style="margin-left:auto">View latest report →</a>
+      <a href="#" id="latestReportLink" class="muted hide" style="margin-left:auto;text-decoration:underline">View latest report</a>
     </div>
 
-    <!-- Results (latest run) -->
+    <!-- Results -->
     <div id="results" class="hide" style="margin-top:12px">
       <h4>Your Report</h4>
       <div id="summary" class="muted" style="margin:8px 0 12px"></div>
@@ -227,30 +229,48 @@
   }
 
   /* ================ ELEMENT REFS ================ */
-  const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
-  const heightFeetEl=$('heightFeet'), heightInchesEl=$('heightInches'), weightEl=$('weight');
-  const footEl=$('foot'), positionEl=$('position'), skillEl=$('skill');
-  const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
-  const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus'), viewLastLink=$('viewLastLink');
-  const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList');
+  const accountCard = $('accountCard'),
+        analysisCard = $('analysisCard'),
+        authMsg = $('authMsg');
 
-  const libraryPage = $('libraryPage');
-  const libraryList = $('libraryList');
-  const pageTag     = $('pageTag');
-  const logoutTop   = $('logoutTop');
+  const heightFeetEl   = $('heightFeet'),
+        heightInchesEl = $('heightInches'),
+        weightEl       = $('weight'),
+        footEl         = $('foot'),
+        positionEl     = $('position'),
+        skillEl        = $('skill');
 
-  const splash = document.getElementById('splash');
+  const clipFile  = $('clipFile'),
+        uploadBtn = $('uploadBtn'),
+        uploadMsg = $('uploadMsg'),
+        clipInfo  = $('clipInfo');
+
+  const analyzeBtn      = $('analyzeBtn'),
+        analyzeStatus   = $('analyzeStatus'),
+        latestReportLink= $('latestReportLink');
+
+  const results   = $('results'),
+        summary   = $('summary'),
+        focusList = $('focusList'),
+        drillList = $('drillList');
+
+  const libraryPage = $('libraryPage'),
+        libraryList = $('libraryList'),
+        pageTag     = $('pageTag'),
+        logoutTop   = $('logoutTop');
+
+  const splash = $('splash');
+
+  const menuContainer = document.querySelector('.menu-container'),
+        menuIcon      = $('menuIcon'),
+        menuPanel     = $('menu'),
+        newAnalysisLink = $('newAnalysis'),
+        libraryLink     = $('library'),
+        logoutBtn       = $('logout');
+
   function hideSplash(){ if (splash) splash.style.display='none'; }
 
-  const menuContainer=document.querySelector('.menu-container');
-  const menuIcon=$('menuIcon'), menuPanel=$('menu');
-  const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
-
-  let lastVideoUrl = '';
-  let lastPublicId = '';
-  let lastAnalysisId = null;
-  let libraryCache = [];
-
+  /* =================== MENU =================== */
   menuIcon.addEventListener('click', ()=> {
     menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
     if (menuPanel.style.display==='') menuPanel.style.display='flex';
@@ -283,9 +303,12 @@
     menuPanel.style.display='none';
     setHash('analysis');
     hide(results);
+    analyzeStatus.textContent = '';
+    latestReportLink.classList.add('hide');
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
-  libraryLink.addEventListener('click', (e)=>{
+
+  libraryLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
     setHash('library');
@@ -297,6 +320,21 @@
   const su_name=$('su_name'), su_email=$('su_email'), su_password=$('su_password'),
         su_age=$('su_age'),   su_dob=$('su_dob'),
         li_email=$('li_email'), li_password=$('li_password');
+
+  function applyProfileToForm(profile){
+    if (!profile) return;
+    const h = Number(profile.height || 0);
+    if (h > 0){
+      const ft = Math.floor(h / 12);
+      const inch = h % 12;
+      heightFeetEl.value   = ft || '';
+      heightInchesEl.value = inch || '';
+    }
+    if (profile.weight != null) weightEl.value = profile.weight;
+    if (profile.foot)    footEl.value = profile.foot;
+    if (profile.position)positionEl.value = profile.position;
+    if (profile.skill)   skillEl.value = profile.skill;
+  }
 
   async function doSignup(){
     const payload = {
@@ -313,14 +351,21 @@
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
     if (out.ok && out.token){
       setToken(out.token);
+
+      // store basic profile
       await api('/api/profile', {
-        method: 'PUT',
+        method:'POST',
         body: JSON.stringify({
           name: payload.name,
-          age:  payload.age,
-          dob:  payload.dob
+          age: payload.age,
+          dob: payload.dob
         })
       });
+
+      // fetch full profile for form
+      const profRes = await api('/api/profile');
+      if (profRes.ok) applyProfileToForm(profRes.profile);
+
       setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
       proceedToAnalysis();
     } else {
@@ -336,7 +381,8 @@
     const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
     if (out.ok && out.token){
       setToken(out.token);
-      try { await api('/api/profile'); } catch {}
+      const profRes = await api('/api/profile');
+      if (profRes.ok) applyProfileToForm(profRes.profile);
       setAuthMessage('Logged in ✅', true);
       proceedToAnalysis();
     } else {
@@ -352,7 +398,7 @@
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 
-  function doLogout() {
+  function doLogout(){
     clearToken();
     try { menuPanel.style.display = 'none'; } catch {}
     try { menuContainer.style.display = 'none'; } catch {}
@@ -360,9 +406,11 @@
     setHash('account');
     goTo('account');
     hide(results);
+    analyzeStatus.textContent = '';
+    latestReportLink.classList.add('hide');
   }
-  logoutBtn && logoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
-  logoutTop && logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
+  if (logoutBtn) logoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
+  if (logoutTop) logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
 
   /* ============== CLOUDINARY UPLOAD ============== */
   async function uploadToCloudinary(file){
@@ -373,6 +421,8 @@
     const r = await fetch(url, { method:'POST', body: fd });
     return await r.json();
   }
+
+  let lastVideoUrl = '', lastPublicId = '', lastAnalysisId = null;
 
   async function doUpload() {
     const f = clipFile.files?.[0];
@@ -393,22 +443,8 @@
 
         uploadMsg.textContent = 'Uploaded ✅';
         uploadMsg.className = 'ok';
-        clipInfo.innerHTML = `<span class="pill">${f.name}</span> 
+        clipInfo.innerHTML = `<span class="pill">${f.name}</span>
                               <a href="${lastVideoUrl}" target="_blank">View</a>`;
-
-        await api('/api/clip', {
-          method: 'POST',
-          body: JSON.stringify({
-            url: up.secure_url,
-            public_id: up.public_id,
-            created_at: up.created_at || new Date().toISOString(),
-            bytes: up.bytes || f.size,
-            duration: up.duration || null,
-            width: up.width || null,
-            height: up.height || null,
-            format: up.format || f.type
-          })
-        });
       } else {
         uploadMsg.textContent = 'Upload failed';
         uploadMsg.className = 'err';
@@ -421,38 +457,44 @@
     }
   }
 
-  /* ==================== ANALYZE ==================== */
-  function renderReport(data){
-    summary.textContent = data.summary || 'Summary not available.';
-    focusList.innerHTML = (data.focus || []).map(x=>`<li>${x}</li>`).join('');
-    drillList.innerHTML = (data.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
-    results.classList.remove('hide');
+  function renderAnalysis(a){
+    if (!a) return;
+    summary.textContent = a.summary || 'Summary not available.';
+    focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
+    drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+    show(results);
     results.scrollIntoView({behavior:'smooth', block:'start'});
+
+    lastAnalysisId = a.id || null;
+    if (lastAnalysisId){
+      latestReportLink.classList.remove('hide');
+    } else {
+      latestReportLink.classList.add('hide');
+    }
   }
 
   async function doAnalyze(){
     analyzeStatus.textContent='Analyzing…';
     analyzeStatus.className='muted';
-    viewLastLink.classList.add('hide');
-    lastAnalysisId = null;
+
+    const payload = {
+      heightFeet: Number(heightFeetEl.value || 0),
+      heightInches: Number(heightInchesEl.value || 0),
+      weight: Number(weightEl.value || 0),
+      foot: footEl.value,
+      position: positionEl.value,
+      skill: skillEl.value.trim() || null,
+      videoUrl: lastVideoUrl,
+      publicId: lastPublicId
+    };
+
+    if (!payload.videoUrl){
+      analyzeStatus.textContent='Upload a clip first';
+      analyzeStatus.className='err';
+      return;
+    }
 
     try{
-      const payload = {
-        heightFeet: Number(heightFeetEl.value||0),
-        heightInches: Number(heightInchesEl.value||0),
-        weight: Number(weightEl.value||0),
-        foot: footEl.value,
-        position: positionEl.value,
-        skill: skillEl.value.trim(),
-        videoUrl: lastVideoUrl,
-        publicId: lastPublicId
-      };
-      if (!payload.videoUrl){
-        analyzeStatus.textContent='Upload a clip first'; 
-        analyzeStatus.className='err'; 
-        return;
-      }
-
       const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
       if (!out.ok){
         analyzeStatus.textContent = out.error || 'Analyze failed';
@@ -460,15 +502,11 @@
         return;
       }
 
-      lastAnalysisId = out.id || null;
+      const a = out.analysis;
+      renderAnalysis(a);
+
       analyzeStatus.textContent='Done ✅';
       analyzeStatus.className='ok';
-
-      renderReport(out);
-
-      if (lastAnalysisId) {
-        viewLastLink.classList.remove('hide');
-      }
     }catch(e){
       analyzeStatus.textContent='Network error';
       analyzeStatus.className='err';
@@ -477,16 +515,15 @@
   }
 
   /* ================ LIBRARY ================ */
+  let libraryCache = [];
+
   function renderLibrary(items){
     goTo('library');
     libraryList.innerHTML = items.length
       ? items.map(i => `
           <div class="card" data-id="${i.id}">
             <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
-            <div style="margin:6px 0">
-              ${i.skill ? `<span class="pill">${i.skill}</span>` : ''}
-              ${i.summary ? i.summary : '(no summary saved)'}
-            </div>
+            <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
             <div class="row" style="gap:8px">
               ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
               <button class="block-btn" style="flex:0 0 auto;padding:6px 10px" data-action="view" data-id="${i.id}">View</button>
@@ -513,14 +550,9 @@
       const res = await api(`/api/analyses/${id}`);
       if (!res.ok) throw new Error(res.error || 'Not found');
 
-      goTo('analysis');
-
       const a = res.item || {};
-      renderReport({
-        summary: a.summary,
-        focus: a.focus,
-        drills: a.drills
-      });
+      goTo('analysis');
+      renderAnalysis(a);
     }catch(e){
       alert(e.message || 'Could not open analysis');
     }
@@ -554,14 +586,10 @@
     }
   });
 
-  /* ====== "View latest report" link ====== */
-  viewLastLink.addEventListener('click', (e)=>{
+  latestReportLink.addEventListener('click', (e)=>{
     e.preventDefault();
-    if (lastAnalysisId){
-      viewAnalysis(lastAnalysisId);
-    } else {
-      setHash('library');
-    }
+    if (!lastAnalysisId) return;
+    viewAnalysis(lastAnalysisId);
   });
 
   /* ================= WIRE UP ================= */
@@ -574,11 +602,16 @@
   analyzeBtn  && (analyzeBtn.onclick  = doAnalyze);
 
   /* ================= BOOTSTRAP ================= */
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     try{
       if (getToken()){
         if (menuContainer) menuContainer.style.display='block';
         if (logoutTop) logoutTop.style.display = 'inline-block';
+
+        // Pre-fill profile
+        const profRes = await api('/api/profile');
+        if (profRes.ok) applyProfileToForm(profRes.profile);
+
         const page = currentHash();
         if (page === 'library') { loadLibrary(); }
         else { setHash('analysis'); }
