@@ -10,7 +10,6 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/ai-soccer-frontend/favicon-16x16.png">
 
   <style>
-    /* ================= Base Styles ================= */
     :root{--bg:#0b0b0b;--card:#141414;--muted:#9aa0a6;--text:#e8eaed;--line:#222}
     *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
     body{margin:0;background:var(--bg);color:var(--text)}
@@ -30,7 +29,6 @@
     ul{margin:8px 0;padding-left:18px}
     li{margin:6px 0}
 
-    /* ================= Splash Loader ================= */
     #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
     #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 16px #00ff95;animation:pulse 1.2s infinite}
     @keyframes pulse{0%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}100%{transform:scale(.9);opacity:.7}}
@@ -40,27 +38,23 @@
     .block-btn{width:100%}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f0f0f;border:1px solid var(--line);margin-right:6px}
 
-    /* ================= Hamburger Menu ================= */
     .menu-container{position:fixed;top:20px;right:30px;z-index:1000;display:none}
     .menu-icon{font-size:28px;cursor:pointer;color:white;user-select:none;background-color:#111;border-radius:8px;padding:6px 10px;box-shadow:0 0 8px rgba(0,0,0,0.3)}
     .menu{display:none;flex-direction:column;position:absolute;right:0;background-color:#111;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.4);padding:10px 0;min-width:150px;z-index:10;max-height:70vh;overflow:auto}
     .menu a{color:white;text-decoration:none;padding:10px 16px;display:block}
     .menu a:hover{background-color:#333}
 
-    /* ================= Header / Logo ================= */
     .app-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .app-header .brand{display:flex;align-items:center;gap:10px}
     #logo{height:36px;width:auto;display:block}
     @media (min-width:720px){#logo{height:42px}}
     #logoutTop{display:none}
-    
-    /* Ensure the menu icon is always visible on narrow desktop widths */
-    @media (max-width: 1400px){
-      .menu-container{ display:block !important; right:16px; top:16px; }
-    }
-    .app-header, header, body{ overflow: visible; }
 
-    /* ================= Overlay Fix ================= */
+    @media (max-width:1400px){
+      .menu-container{display:block !important;right:16px;top:16px;}
+    }
+    .app-header, header, body{overflow:visible;}
+
     #accountCard, #analysisCard, #libraryPage, .menu-container{position:relative;z-index:10}
   </style>
 </head>
@@ -78,7 +72,7 @@
   <!-- Splash -->
   <div id="splash"><div class="pulse"></div></div>
 
-  <!-- Header with brand + LOGO -->
+  <!-- Header -->
   <header class="container app-header">
     <div class="brand">
       <img id="logo" alt="Ball Knowledge Logo">
@@ -86,7 +80,7 @@
     </div>
 
     <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
-      <a id="pageTag" class="muted" style="text-decoration:none; font-size:14px">Analysis</a>
+      <a id="pageTag" class="muted" style="text-decoration:none;font-size:14px">Analysis</a>
       <button id="logoutTop" class="pill">Log out</button>
     </nav>
 
@@ -95,12 +89,12 @@
         const el = document.getElementById('logo');
         if (!el) return;
         const base = location.hostname.endsWith('github.io') ? '/ai-soccer-frontend' : '.';
-        el.src = `${base}/ball-knowledge-high-resolution-logo.png`;
+        el.src = base + '/ball-knowledge-high-resolution-logo.png';
       })();
     </script>
   </header>
 
-  <!-- =========== ACCOUNT =========== -->
+  <!-- ACCOUNT -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
     <div class="grid">
@@ -129,23 +123,25 @@
     <p id="authMsg" class="muted"></p>
   </section>
 
-  <!-- =========== ANALYSIS =========== -->
+  <!-- ANALYSIS -->
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
 
-    <!-- Attributes -->
     <div class="grid">
+      <!-- Attributes -->
       <div class="card" style="margin:0">
         <h4>Attributes</h4>
         <div class="row">
-          <input id="heightFeet" type="number" placeholder="Height (feet)">
-          <input id="heightInches" type="number" placeholder="Height (inches)">
+          <input id="height_feet" type="number" placeholder="Height (feet)">
+          <input id="height_inches" type="number" placeholder="Height (inches)">
         </div>
         <div class="row">
           <input id="weight" type="number" placeholder="Weight (lbs)">
           <select id="foot">
             <option value="" disabled selected>Dominant Foot</option>
-            <option>Right</option><option>Left</option><option>Both</option>
+            <option>Right</option>
+            <option>Left</option>
+            <option>Both</option>
           </select>
         </div>
         <div class="row">
@@ -156,14 +152,12 @@
             <option>Defensive Mid</option><option>Central Mid</option><option>Attacking Mid</option>
             <option>Right Wing</option><option>Left Wing</option><option>Striker</option>
           </select>
-        </div>
-        <div class="row">
-          <input id="skill" type="text" placeholder="What skill are you working on? (e.g. finishing, 1v1 dribbling)">
+          <input id="skill" type="text" placeholder="What skill are you working on? (e.g. shooting, dribbling)">
         </div>
         <p class="muted">We’ll pair these with your video to personalize feedback & drills.</p>
       </div>
 
-      <!-- Video upload -->
+      <!-- Clip -->
       <div class="card" style="margin:0">
         <h4>Attach a Training Clip</h4>
         <div class="row">
@@ -175,7 +169,6 @@
       </div>
     </div>
 
-    <!-- Actions -->
     <div class="row" style="margin-top:12px">
       <button id="analyzeBtn">Analyze</button>
       <span id="analyzeStatus" class="muted"></span>
@@ -196,10 +189,11 @@
           <ul id="drillList"></ul>
         </div>
       </div>
+      <!-- 'Plays like' removed for Part 1 -->
     </div>
   </section>
 
-  <!-- =========== LIBRARY PAGE =========== -->
+  <!-- LIBRARY -->
   <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
     <h3 id="libraryTitle">Your Library</h3>
     <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
@@ -207,312 +201,283 @@
   </section>
 
   <script>
-  /* =================== CONFIG =================== */
-  const BASE =
-    location.hostname.endsWith('github.io')
-      ? 'https://ai-soccer-backend-2-production.up.railway.app'
-      : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
+    // ========= CONFIG =========
+    const BASE =
+      location.hostname.endsWith('github.io')
+        ? 'https://ai-soccer-backend-2-production.up.railway.app'
+        : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
 
-  const CLOUD_NAME    = 'dblconpx8';
-  const UPLOAD_PRESET = 'ballknowledge_unsigned';
+    const CLOUD_NAME    = 'dblconpx8';
+    const UPLOAD_PRESET = 'ballknowledge_unsigned';
 
-  /* =================== HELPERS =================== */
-  const $ = (id) => document.getElementById(id);
-  const setToken   = (t) => localStorage.setItem('bk_token', t);
-  const getToken   = ()  => localStorage.getItem('bk_token');
-  const clearToken = ()  => localStorage.removeItem('bk_token');
+    // ========= HELPERS =========
+    const $ = id => document.getElementById(id);
+    const setToken   = t => localStorage.setItem('bk_token', t);
+    const getToken   = () => localStorage.getItem('bk_token');
+    const clearToken = () => localStorage.removeItem('bk_token');
 
-  function show(el){ if(!el) return; el.classList.remove('hide'); el.style.display=''; }
-  function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
+    function show(el){ if(!el) return; el.classList.remove('hide'); el.style.display=''; }
+    function hide(el){ if(!el) return; el.classList.add('hide'); el.style.display='none'; }
 
-  async function api(path, opts = {}) {
-    const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
-    const t = getToken();
-    if (t) headers['Authorization'] = 'Bearer ' + t;
-    console.log('API →', (opts.method || 'GET'), path);
-    const r = await fetch(`${BASE}${path}`, { ...opts, headers });
-    try { return await r.json(); } catch { return { ok:false, error:'Bad JSON' }; }
-  }
+    async function api(path, opts = {}){
+      const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
+      const t = getToken();
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      const r = await fetch(`${BASE}${path}`, { ...opts, headers });
+      try { return await r.json(); } catch { return { ok:false, error:'Bad JSON' }; }
+    }
 
-  /* ================ ELEMENT REFS ================ */
-  const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
-  const heightFeetEl=$('heightFeet'), heightInchesEl=$('heightInches'),
-        weightEl=$('weight'), footEl=$('foot'), positionEl=$('position'), skillEl=$('skill');
-  const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
-  const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
-  const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList');
+    // ========= ELEMENT REFS =========
+    const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
+    const heightFeetEl=$('height_feet'), heightInchesEl=$('height_inches');
+    const weightEl=$('weight'), footEl=$('foot'), positionEl=$('position'), skillEl=$('skill');
+    const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
+    const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
+    const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList');
+    const libraryPage=$('libraryPage'), libraryList=$('libraryList');
+    const pageTag=$('pageTag'), logoutTop=$('logoutTop');
 
-  const libraryPage = $('libraryPage');
-  const libraryList = $('libraryList');
-  const pageTag     = $('pageTag');
-  const logoutTop   = $('logoutTop');
+    const splash = document.getElementById('splash');
+    function hideSplash(){ if (splash) splash.style.display='none'; }
 
-  const splash = document.getElementById('splash');
-  function hideSplash(){ if (splash) splash.style.display='none'; }
+    const menuContainer=document.querySelector('.menu-container');
+    const menuIcon=$('menuIcon'), menuPanel=$('menu');
+    const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
 
-  const menuContainer=document.querySelector('.menu-container');
-  const menuIcon=$('menuIcon'), menuPanel=$('menu');
-  const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
-
-  menuIcon.addEventListener('click', ()=> {
-    menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
-    if (menuPanel.style.display==='') menuPanel.style.display='flex';
-  });
-  window.addEventListener('click',(e)=>{
-    if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){ menuPanel.style.display='none'; }
-  });
-
-  /* =================== MINI ROUTER =================== */
-  function goTo(screen){ // 'analysis' | 'library' | 'account'
-    hide(accountCard); hide(analysisCard); hide(libraryPage);
-    if (screen === 'analysis') { show(analysisCard); if (pageTag) pageTag.textContent='Analysis'; }
-    else if (screen === 'library') { show(libraryPage); if (pageTag) pageTag.textContent='Library'; }
-    else { show(accountCard); if (pageTag) pageTag.textContent='Account'; }
-    if (screen !== 'account' && menuContainer) menuContainer.style.display='block';
-  }
-  function setHash(screen){ location.hash = `#/${screen}`; }
-  function currentHash(){ return (location.hash || '').replace(/^#\//,''); }
-
-  window.addEventListener('hashchange', () => {
-    const page = currentHash();
-    if (!getToken()) { goTo('account'); return; }
-    if (page === 'library') { loadLibrary(); }
-    else if (page === 'analysis') { goTo('analysis'); }
-    else { setHash('analysis'); }
-  });
-
-  newAnalysisLink.addEventListener('click',(e)=>{
-    e.preventDefault();
-    menuPanel.style.display='none';
-    setHash('analysis');
-    hide(results);
-    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
-  });
-  libraryLink.addEventListener('click', (e)=>{
-    e.preventDefault();
-    menuPanel.style.display='none';
-    setHash('library');
-  });
-
-  /* ================= AUTH ================= */
-  function setAuthMessage(t, ok=true){ authMsg.textContent=t; authMsg.className = ok ? 'ok' : 'err'; }
-
-  const su_name=$('su_name'), su_email=$('su_email'), su_password=$('su_password'),
-        su_age=$('su_age'),   su_dob=$('su_dob'),
-        li_email=$('li_email'), li_password=$('li_password');
-
-  async function hydrateProfile() {
-    try{
-      const res = await api('/api/profile');
-      if (!res || !res.ok || !res.profile) return;
-      const p = res.profile;
-
-      if (p.height){
-        const total = Number(p.height || 0);
-        const ft = Math.floor(total/12);
-        const inch = total % 12;
-        heightFeetEl.value = ft || '';
-        heightInchesEl.value = inch || '';
+    menuIcon.addEventListener('click', ()=>{
+      menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
+      if (menuPanel.style.display==='') menuPanel.style.display='flex';
+    });
+    window.addEventListener('click', (e)=>{
+      if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){
+        menuPanel.style.display='none';
       }
-      if (p.weight != null) weightEl.value = p.weight;
-      if (p.foot) {
-        footEl.value = p.foot;
+    });
+
+    function goTo(screen){
+      hide(accountCard); hide(analysisCard); hide(libraryPage);
+      if (screen === 'analysis') { show(analysisCard); if(pageTag) pageTag.textContent='Analysis'; }
+      else if (screen === 'library') { show(libraryPage); if(pageTag) pageTag.textContent='Library'; }
+      else { show(accountCard); if(pageTag) pageTag.textContent='Account'; }
+      if (screen !== 'account' && menuContainer) menuContainer.style.display='block';
+    }
+    function setHash(screen){ location.hash = '#/' + screen; }
+    function currentHash(){ return (location.hash || '').replace(/^#\//,''); }
+
+    window.addEventListener('hashchange', ()=>{
+      const page=currentHash();
+      if (!getToken()){ goTo('account'); return; }
+      if (page==='library'){ loadLibrary(); }
+      else if (page==='analysis'){ goTo('analysis'); }
+      else { setHash('analysis'); }
+    });
+
+    newAnalysisLink.addEventListener('click', (e)=>{
+      e.preventDefault();
+      menuPanel.style.display='none';
+      setHash('analysis');
+      hide(results);
+      setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
+    });
+    libraryLink.addEventListener('click', (e)=>{
+      e.preventDefault();
+      menuPanel.style.display='none';
+      setHash('library');
+    });
+
+    // ========= AUTH =========
+    function setAuthMessage(t, ok=true){
+      authMsg.textContent=t;
+      authMsg.className = ok ? 'ok' : 'err';
+    }
+
+    const su_name=$('su_name'), su_email=$('su_email'), su_password=$('su_password'),
+          su_age=$('su_age'),   su_dob=$('su_dob'),
+          li_email=$('li_email'), li_password=$('li_password');
+
+    async function doSignup(){
+      const payload={
+        name: su_name.value.trim(),
+        email: su_email.value.trim(),
+        password: su_password.value.trim(),
+        age: Number(su_age.value||0),
+        dob: su_dob.value
+      };
+      if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob){
+        return setAuthMessage('Please complete all sign-up fields', false);
       }
-      if (p.position) {
-        positionEl.value = p.position;
-      }
-      if (p.skill) {
-        skillEl.value = p.skill;
-      }
-    }catch(e){
-      console.warn('hydrateProfile error', e);
-    }
-  }
+      setAuthMessage('Creating your account…');
+      const out = await api('/api/signup', {method:'POST', body:JSON.stringify(payload)});
+      if (out.ok && out.token){
+        setToken(out.token);
 
-  async function doSignup(){
-    const payload = {
-      name: su_name.value.trim(),
-      email: su_email.value.trim(),
-      password: su_password.value.trim(),
-      age: Number(su_age.value||0),
-      dob: su_dob.value
-    };
-    if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob){
-      return setAuthMessage('Please complete all sign-up fields', false);
-    }
-    setAuthMessage('Creating your account…');
-    const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
-    if (out.ok && out.token){
-      setToken(out.token);
-
-      await api('/api/profile', {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: payload.name,
-          age: payload.age,
-          dob: payload.dob
-        })
-      });
-
-      setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
-      proceedToAnalysis();
-    } else if (out.ok && out.user){
-      const li = await api('/api/login', { method:'POST', body: JSON.stringify({email:payload.email,password:payload.password}) });
-      if (li.ok && li.token){ setToken(li.token); proceedToAnalysis(); }
-      else setAuthMessage(li.error || 'Login required after signup', false);
-    } else {
-      setAuthMessage(out.error || 'Signup failed', false);
-    }
-  }
-
-  async function doLogin(){
-    const email = li_email.value.trim();
-    const password = li_password.value.trim();
-    if (!email || !password) return setAuthMessage('Enter email & password', false);
-    setAuthMessage('Logging in…');
-    const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
-    if (out.ok && out.token){
-      setToken(out.token);
-      try { await api('/api/profile'); } catch {}
-      setAuthMessage('Logged in ✅', true);
-      proceedToAnalysis();
-    } else {
-      setAuthMessage(out.error || 'Login failed', false);
-    }
-  }
-
-  function proceedToAnalysis(){
-    setHash('analysis');
-    if (menuContainer) menuContainer.style.display='block';
-    if (logoutTop) logoutTop.style.display = 'inline-block';
-    hideSplash();
-    hydrateProfile();
-    setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
-  }
-
-  function doLogout() {
-    clearToken();
-    try { menuPanel.style.display = 'none'; } catch {}
-    try { menuContainer.style.display = 'none'; } catch {}
-    if (logoutTop) logoutTop.style.display = 'none';
-    setHash('account');
-    goTo('account');
-    hide(results);
-  }
-  if (logoutBtn) logoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
-  if (logoutTop) logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
-
-  /* ============== CLOUDINARY UPLOAD ============== */
-  async function uploadToCloudinary(file){
-    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('upload_preset', UPLOAD_PRESET);
-    const r = await fetch(url, { method:'POST', body: fd });
-    return await r.json();
-  }
-
-  /* ==================== ANALYZE ==================== */
-  let lastVideoUrl = '', lastPublicId = '';
-
-  async function doUpload() {
-    const f = clipFile.files?.[0];
-    if (!f) {
-      uploadMsg.textContent = 'Pick a video first';
-      uploadMsg.className = 'err';
-      return;
-    }
-    uploadMsg.textContent = 'Uploading…';
-    uploadMsg.className = 'muted';
-
-    try {
-      const up = await uploadToCloudinary(f);
-
-      if (up.secure_url) {
-        lastVideoUrl = up.secure_url;
-        lastPublicId = up.public_id || '';
-
-        uploadMsg.textContent = 'Uploaded ✅';
-        uploadMsg.className = 'ok';
-        if (clipInfo) {
-          clipInfo.innerHTML = `<span class="pill">${f.name}</span> 
-                                <a href="${lastVideoUrl}" target="_blank">View</a>`;
-        }
-
-        await api('/api/clip', {
-          method: 'POST',
+        await api('/api/profile', {
+          method:'PUT',
           body: JSON.stringify({
-            url: up.secure_url,
-            public_id: up.public_id,
-            created_at: up.created_at || new Date().toISOString(),
-            bytes: up.bytes || f.size,
-            duration: up.duration || null,
-            width: up.width || null,
-            height: up.height || null,
-            format: up.format || f.type
+            name: payload.name,
+            age: payload.age,
+            dob: payload.dob
           })
         });
-      } else {
-        uploadMsg.textContent = 'Upload failed';
-        uploadMsg.className = 'err';
-        console.warn('Cloudinary upload issue:', up);
-      }
-    } catch (e) {
-      uploadMsg.textContent = 'Network error';
-      uploadMsg.className = 'err';
-      console.error(e);
-    }
-  }
 
-  async function doAnalyze(){
-    analyzeStatus.textContent='Analyzing…';
-    analyzeStatus.className='muted';
-    try{
+        setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
+        proceedToAnalysis();
+      } else {
+        setAuthMessage(out.error || 'Signup failed', false);
+      }
+    }
+
+    async function doLogin(){
+      const email=li_email.value.trim();
+      const password=li_password.value.trim();
+      if (!email || !password) return setAuthMessage('Enter email & password', false);
+      setAuthMessage('Logging in…');
+      const out = await api('/api/login', {method:'POST', body:JSON.stringify({email,password})});
+      if (out.ok && out.token){
+        setToken(out.token);
+        setAuthMessage('Logged in ✅', true);
+        proceedToAnalysis();
+      } else {
+        setAuthMessage(out.error || 'Login failed', false);
+      }
+    }
+
+    function proceedToAnalysis(){
+      setHash('analysis');
+      if (menuContainer) menuContainer.style.display='block';
+      if (logoutTop) logoutTop.style.display='inline-block';
+      hideSplash();
+      setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
+    }
+
+    function doLogout(){
+      clearToken();
+      try{ menuPanel.style.display='none'; }catch{}
+      try{ menuContainer.style.display='none'; }catch{}
+      if (logoutTop) logoutTop.style.display='none';
+      setHash('account');
+      goTo('account');
+      hide(results);
+    }
+    logoutBtn && logoutBtn.addEventListener('click', e=>{e.preventDefault();doLogout();});
+    logoutTop && logoutTop.addEventListener('click', e=>{e.preventDefault();doLogout();});
+
+    // ========= CLOUDINARY UPLOAD =========
+    async function uploadToCloudinary(file){
+      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+      const fd  = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', UPLOAD_PRESET);
+      const r = await fetch(url, {method:'POST', body:fd});
+      return await r.json();
+    }
+
+    let lastVideoUrl='', lastPublicId='';
+
+    async function doUpload(){
+      const f = clipFile.files?.[0];
+      if (!f){
+        uploadMsg.textContent='Pick a video first';
+        uploadMsg.className='err';
+        return;
+      }
+      uploadMsg.textContent='Uploading…';
+      uploadMsg.className='muted';
+      try{
+        const up = await uploadToCloudinary(f);
+        if (up.secure_url){
+          lastVideoUrl = up.secure_url;
+          lastPublicId = up.public_id || '';
+          uploadMsg.textContent='Uploaded ✅';
+          uploadMsg.className='ok';
+          clipInfo.innerHTML = `<span class="pill">${f.name}</span> <a href="${lastVideoUrl}" target="_blank">View</a>`;
+
+          await api('/api/clip',{
+            method:'POST',
+            body:JSON.stringify({
+              url: up.secure_url,
+              public_id: up.public_id,
+              created_at: up.created_at || new Date().toISOString(),
+              bytes: up.bytes || f.size,
+              duration: up.duration || null,
+              width: up.width || null,
+              height: up.height || null,
+              format: up.format || f.type
+            })
+          });
+        } else {
+          uploadMsg.textContent='Upload failed';
+          uploadMsg.className='err';
+        }
+      }catch(e){
+        console.error(e);
+        uploadMsg.textContent='Network error';
+        uploadMsg.className='err';
+      }
+    }
+
+    // ========= ANALYZE (REAL-TIME) =========
+    async function doAnalyze(){
+      analyzeStatus.textContent='Analyzing… (this can take a few seconds)';
+      analyzeStatus.className='muted';
+
       const payload = {
-        heightFeet: Number(heightFeetEl.value || 0),
-        heightInches: Number(heightInchesEl.value || 0),
-        weight: Number(weightEl.value||0),
+        heightFeet:   Number(heightFeetEl.value||0),
+        heightInches: Number(heightInchesEl.value||0),
+        weight:       Number(weightEl.value||0),
         foot: footEl.value,
         position: positionEl.value,
+        skill: skillEl.value.trim(),
         videoUrl: lastVideoUrl,
-        publicId: lastPublicId,
-        skill: skillEl.value.trim() || null
+        publicId: lastPublicId
       };
+
       if (!payload.videoUrl){
         analyzeStatus.textContent='Upload a clip first';
         analyzeStatus.className='err';
         return;
       }
-      const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
-      if (!out.ok){
-        analyzeStatus.textContent = out.error || 'Analyze failed';
+
+      try{
+        const out = await api('/api/analyze', {
+          method:'POST',
+          body:JSON.stringify(payload)
+        });
+        if (!out.ok){
+          analyzeStatus.textContent = out.error || 'Analyze failed';
+          analyzeStatus.className='err';
+          return;
+        }
+
+        // Show full report immediately
+        summary.textContent = out.summary || 'Summary not available.';
+        focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
+        drillList.innerHTML = (out.drills || []).map(d=>{
+          const label = d.title || d.url;
+          return `<li><a href="${d.url}" target="_blank">${label}</a></li>`;
+        }).join('');
+
+        analyzeStatus.textContent='Done ✅';
+        analyzeStatus.className='ok';
+        results.classList.remove('hide');
+        results.scrollIntoView({behavior:'smooth',block:'start'});
+
+        // refresh library in background so it appears there too
+        loadLibrary().catch(()=>{});
+      }catch(e){
+        console.error(e);
+        analyzeStatus.textContent='Network error';
         analyzeStatus.className='err';
-        return;
       }
-
-      summary.textContent = out.summary || 'Summary not available.';
-      focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
-
-      analyzeStatus.textContent='Done ✅';
-      analyzeStatus.className='ok';
-      results.classList.remove('hide');
-      results.scrollIntoView({behavior:'smooth', block:'start'});
-
-    }catch(e){
-      analyzeStatus.textContent='Network error';
-      analyzeStatus.className='err';
-      console.error(e);
     }
-  }
 
-  /* ================ LIBRARY ================ */
-  let libraryCache = [];
+    // ========= LIBRARY =========
+    let libraryCache=[];
 
-  function renderLibrary(items){
-    goTo('library');
-    libraryList.innerHTML = items.length
-      ? items.map(i => `
+    function renderLibrary(items){
+      goTo('library');
+      libraryList.innerHTML = items.length
+        ? items.map(i=>`
           <div class="card" data-id="${i.id}">
             <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
             <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
@@ -523,98 +488,91 @@
             </div>
           </div>
         `).join('')
-      : `<div class="muted">No saved analyses yet. Upload a clip and press Analyze to create one.</div>`;
-  }
-
-  async function loadLibrary(){
-    try{
-      const res = await api('/api/analyses');
-      if (!res.ok) throw new Error(res.error || 'Failed to load library');
-      libraryCache = res.items || [];
-      renderLibrary(libraryCache);
-    }catch(e){
-      alert(e.message || 'Could not load library');
+        : `<div class="muted">No saved analyses yet. Upload a clip and press Analyze to create one.</div>`;
     }
-  }
 
-  async function viewAnalysis(id){
-    try{
-      const res = await api(`/api/analyses/${id}`);
-      if (!res.ok) throw new Error(res.error || 'Not found');
-
-      goTo('analysis');
-
-      const a = res.item || {};
-      summary.textContent = a.summary || 'Summary not available.';
-      focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
-
-      results.classList.remove('hide');
-      results.scrollIntoView({ behavior:'smooth', block:'start' });
-
-    }catch(e){
-      alert(e.message || 'Could not open analysis');
-    }
-  }
-
-  async function deleteAnalysis(id){
-    if (!confirm('Delete this analysis?')) return;
-    try{
-      const res = await api(`/api/analyses/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(res.error || 'Delete failed');
-      libraryCache = libraryCache.filter(x => x.id !== id);
-      renderLibrary(libraryCache);
-    }catch(e){
-      alert(e.message || 'Could not delete');
-    }
-  }
-
-  document.addEventListener('click', (e)=>{
-    const t = e.target;
-    if (!(t instanceof HTMLElement)) return;
-    const action = t.getAttribute('data-action');
-    const id = t.getAttribute('data-id');
-    if (!action || !id) return;
-
-    if (action === 'view'){
-      e.preventDefault();
-      viewAnalysis(id);
-    } else if (action === 'delete'){
-      e.preventDefault();
-      deleteAnalysis(id);
-    }
-  });
-
-  /* ================= WIRE UP ================= */
-  const signupBtnEl = $('signupBtn');
-  const loginBtnEl  = $('loginBtn');
-  const uploadBtnEl = $('uploadBtn');
-  const analyzeBtnEl= $('analyzeBtn');
-
-  signupBtnEl && (signupBtnEl.onclick = doSignup);
-  loginBtnEl  && (loginBtnEl.onclick  = doLogin);
-  uploadBtnEl && (uploadBtnEl.onclick = doUpload);
-  analyzeBtnEl&& (analyzeBtnEl.onclick= doAnalyze);
-
-  /* ================= BOOTSTRAP ================= */
-  document.addEventListener('DOMContentLoaded', async () => {
-    try{
-      if (getToken()){
-        if (menuContainer) menuContainer.style.display='block';
-        if (logoutTop) logoutTop.style.display = 'inline-block';
-        const page = currentHash();
-        await hydrateProfile();
-        if (page === 'library') { loadLibrary(); }
-        else { setHash('analysis'); }
-      } else {
-        if (menuContainer) menuContainer.style.display='none';
-        if (logoutTop) logoutTop.style.display = 'none';
-        goTo('account');
+    async function loadLibrary(){
+      if (!getToken()) return;
+      try{
+        const res = await api('/api/analyses');
+        if (!res.ok) throw new Error(res.error || 'Failed to load library');
+        libraryCache = res.items || [];
+        if (currentHash()==='library') renderLibrary(libraryCache);
+      }catch(e){
+        console.error(e);
       }
-    } finally {
-      hideSplash();
     }
-  });
+
+    async function viewAnalysis(id){
+      try{
+        const res = await api(`/api/analyses/${id}`);
+        if (!res.ok) throw new Error(res.error || 'Not found');
+        goTo('analysis');
+        const a = res.item || {};
+        summary.textContent = a.summary || 'Summary not available.';
+        focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
+        drillList.innerHTML = (a.drills || []).map(d=>{
+          const label = d.title || d.url;
+          return `<li><a href="${d.url}" target="_blank">${label}</a></li>`;
+        }).join('');
+        results.classList.remove('hide');
+        results.scrollIntoView({behavior:'smooth',block:'start'});
+      }catch(e){
+        alert(e.message || 'Could not open analysis');
+      }
+    }
+
+    async function deleteAnalysis(id){
+      if (!confirm('Delete this analysis?')) return;
+      try{
+        const res = await api(`/api/analyses/${id}`, {method:'DELETE'});
+        if (!res.ok) throw new Error(res.error || 'Delete failed');
+        libraryCache = libraryCache.filter(x=>x.id!==id);
+        renderLibrary(libraryCache);
+      }catch(e){
+        alert(e.message || 'Could not delete');
+      }
+    }
+
+    document.addEventListener('click', e=>{
+      const t=e.target;
+      if (!(t instanceof HTMLElement)) return;
+      const action=t.getAttribute('data-action');
+      const id=t.getAttribute('data-id');
+      if (!action || !id) return;
+      if (action==='view'){ e.preventDefault(); viewAnalysis(id); }
+      else if (action==='delete'){ e.preventDefault(); deleteAnalysis(id); }
+    });
+
+    // ========= WIRE UP =========
+    const signupBtnEl=$('signupBtn');
+    const loginBtnEl=$('loginBtn');
+    const uploadBtnEl=$('uploadBtn');
+    const analyzeBtnEl=$('analyzeBtn');
+
+    signupBtnEl && (signupBtnEl.onclick=doSignup);
+    loginBtnEl  && (loginBtnEl.onclick=doLogin);
+    uploadBtnEl && (uploadBtnEl.onclick=doUpload);
+    analyzeBtnEl&& (analyzeBtnEl.onclick=doAnalyze);
+
+    // ========= BOOTSTRAP =========
+    document.addEventListener('DOMContentLoaded', ()=>{
+      try{
+        if (getToken()){
+          if (menuContainer) menuContainer.style.display='block';
+          if (logoutTop) logoutTop.style.display='inline-block';
+          const page=currentHash();
+          if (page==='library'){ loadLibrary(); }
+          else { setHash('analysis'); }
+        } else {
+          if (menuContainer) menuContainer.style.display='none';
+          if (logoutTop) logoutTop.style.display='none';
+          goTo('account');
+        }
+      } finally {
+        hideSplash();
+      }
+    });
   </script>
 </body>
 </html>
