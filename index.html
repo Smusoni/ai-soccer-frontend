@@ -10,7 +10,6 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/ai-soccer-frontend/favicon-16x16.png">
 
   <style>
-    /* ================= Base Styles ================= */
     :root{--bg:#0b0b0b;--card:#141414;--muted:#9aa0a6;--text:#e8eaed;--line:#222}
     *{box-sizing:border-box;font-family:Inter,system-ui,Arial}
     body{margin:0;background:var(--bg);color:var(--text)}
@@ -18,7 +17,7 @@
     .card{background:var(--card);border-radius:14px;padding:18px;margin:16px 0;border:1px solid var(--line)}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     input,select,button{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f0f0f;color:var(--text)}
-    input,select{min-width:220px}
+    input,select{min-width:180px}
     input::placeholder{color:#8a8f98}
     button{border:none;background:linear-gradient(90deg,#00ff95,#19d3ff);color:#000;font-weight:700;cursor:pointer}
     h1{font-size:36px;margin:8px 0;text-shadow:0 0 15px rgba(0,255,149,.35)}
@@ -30,7 +29,6 @@
     ul{margin:8px 0;padding-left:18px}
     li{margin:6px 0}
 
-    /* ================= Splash Loader ================= */
     #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
     #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 16px #00ff95;animation:pulse 1.2s infinite}
     @keyframes pulse{0%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}100%{transform:scale(.9);opacity:.7}}
@@ -40,28 +38,23 @@
     .block-btn{width:100%}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f0f0f;border:1px solid var(--line);margin-right:6px}
 
-    /* ================= Hamburger Menu ================= */
     .menu-container{position:fixed;top:20px;right:30px;z-index:1000;display:none}
     .menu-icon{font-size:28px;cursor:pointer;color:white;user-select:none;background-color:#111;border-radius:8px;padding:6px 10px;box-shadow:0 0 8px rgba(0,0,0,0.3)}
     .menu{display:none;flex-direction:column;position:absolute;right:0;background-color:#111;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.4);padding:10px 0;min-width:150px;z-index:10;max-height:70vh;overflow:auto}
     .menu a{color:white;text-decoration:none;padding:10px 16px;display:block}
     .menu a:hover{background-color:#333}
 
-    /* ================= Header / Logo ================= */
     .app-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .app-header .brand{display:flex;align-items:center;gap:10px}
     #logo{height:36px;width:auto;display:block}
     @media (min-width:720px){#logo{height:42px}}
     #logoutTop{display:none}
 
-    /* Ensure the menu icon is always visible on narrow desktop widths */
-    @media (max-width: 1400px){
-      .menu-container{ display:block !important; right:16px; top:16px; }
+    @media (max-width:1400px){
+      .menu-container{display:block!important;right:16px;top:16px;}
     }
-    /* If a parent ever clips it, make sure we can see it */
-    .app-header, header, body{ overflow: visible; }
+    .app-header, header, body{overflow:visible;}
 
-    /* ================= Overlay Fix ================= */
     #accountCard, #analysisCard, #libraryPage, .menu-container{position:relative;z-index:10}
   </style>
 </head>
@@ -79,7 +72,7 @@
   <!-- Splash -->
   <div id="splash"><div class="pulse"></div></div>
 
-  <!-- Header with brand + LOGO (src set by script below) -->
+  <!-- Header with logo -->
   <header class="container app-header">
     <div class="brand">
       <img id="logo" alt="Ball Knowledge Logo">
@@ -92,7 +85,6 @@
     </nav>
 
     <script>
-      // Set the logo path deterministically so it works locally and on GitHub Pages
       (function () {
         const el = document.getElementById('logo');
         if (!el) return;
@@ -102,7 +94,7 @@
     </script>
   </header>
 
-  <!-- =========== ACCOUNT (only visible after splash) =========== -->
+  <!-- =========== ACCOUNT =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
     <div class="grid">
@@ -131,16 +123,17 @@
     <p id="authMsg" class="muted"></p>
   </section>
 
-  <!-- =========== ANALYSIS (hidden until logged in) =========== -->
+  <!-- =========== NEW ANALYSIS =========== -->
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
 
-    <!-- Attributes -->
     <div class="grid">
+      <!-- Attributes -->
       <div class="card" style="margin:0">
-        <h4>Attributes</h4>
+        <h4>Player + Session Info</h4>
         <div class="row">
-          <input id="height" type="number" placeholder="Height (inches)">
+          <input id="heightFeet" type="number" placeholder="Height (ft)">
+          <input id="heightInches" type="number" placeholder="Height (in)">
           <input id="weight" type="number" placeholder="Weight (lbs)">
         </div>
         <div class="row">
@@ -156,7 +149,10 @@
             <option>Right Wing</option><option>Left Wing</option><option>Striker</option>
           </select>
         </div>
-        <p class="muted">We’ll pair these with your video to personalize feedback &amp; drills.</p>
+        <div class="row">
+          <input id="skill" type="text" placeholder="What skill is this clip working on? (shooting, dribbling, passing...)">
+        </div>
+        <p class="muted">These details + your clip help tailor feedback and drills to you.</p>
       </div>
 
       <!-- Video upload -->
@@ -172,12 +168,13 @@
     </div>
 
     <!-- Actions -->
-    <div class="row" style="margin-top:12px">
+    <div class="row" style="margin-top:12px;align-items:center">
       <button id="analyzeBtn">Analyze</button>
       <span id="analyzeStatus" class="muted"></span>
+      <a href="#" id="viewLastLink" class="muted hide" style="margin-left:auto">View latest report →</a>
     </div>
 
-    <!-- Results -->
+    <!-- Results (latest run) -->
     <div id="results" class="hide" style="margin-top:12px">
       <h4>Your Report</h4>
       <div id="summary" class="muted" style="margin:8px 0 12px"></div>
@@ -195,7 +192,7 @@
     </div>
   </section>
 
-  <!-- =========== LIBRARY PAGE (separate screen) =========== -->
+  <!-- =========== LIBRARY =========== -->
   <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
     <h3 id="libraryTitle">Your Library</h3>
     <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
@@ -209,7 +206,6 @@
       ? 'https://ai-soccer-backend-2-production.up.railway.app'
       : (location.protocol === 'file:' ? 'http://localhost:8080' : '');
 
-  // Cloudinary unsigned upload
   const CLOUD_NAME    = 'dblconpx8';
   const UPLOAD_PRESET = 'ballknowledge_unsigned';
 
@@ -226,32 +222,34 @@
     const headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
     const t = getToken();
     if (t) headers['Authorization'] = 'Bearer ' + t;
-    console.log('API →', (opts.method || 'GET'), path);
     const r = await fetch(`${BASE}${path}`, { ...opts, headers });
     try { return await r.json(); } catch { return { ok:false, error:'Bad JSON' }; }
   }
 
   /* ================ ELEMENT REFS ================ */
   const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
-  const heightEl=$('height'), weightEl=$('weight'), footEl=$('foot'), positionEl=$('position');
+  const heightFeetEl=$('heightFeet'), heightInchesEl=$('heightInches'), weightEl=$('weight');
+  const footEl=$('foot'), positionEl=$('position'), skillEl=$('skill');
   const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
-  const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
+  const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus'), viewLastLink=$('viewLastLink');
   const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList');
 
-  // Library refs
   const libraryPage = $('libraryPage');
   const libraryList = $('libraryList');
   const pageTag     = $('pageTag');
   const logoutTop   = $('logoutTop');
 
-  // splash
   const splash = document.getElementById('splash');
   function hideSplash(){ if (splash) splash.style.display='none'; }
 
-  // menu
   const menuContainer=document.querySelector('.menu-container');
   const menuIcon=$('menuIcon'), menuPanel=$('menu');
   const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
+
+  let lastVideoUrl = '';
+  let lastPublicId = '';
+  let lastAnalysisId = null;
+  let libraryCache = [];
 
   menuIcon.addEventListener('click', ()=> {
     menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
@@ -262,7 +260,7 @@
   });
 
   /* =================== MINI ROUTER =================== */
-  function goTo(screen){ // 'analysis' | 'library' | 'account'
+  function goTo(screen){
     hide(accountCard); hide(analysisCard); hide(libraryPage);
     if (screen === 'analysis') { show(analysisCard); if (pageTag) pageTag.textContent='Analysis'; }
     else if (screen === 'library') { show(libraryPage); if (pageTag) pageTag.textContent='Library'; }
@@ -280,18 +278,17 @@
     else { setHash('analysis'); }
   });
 
-  // Menu -> routes
   newAnalysisLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
     setHash('analysis');
-    hide(results); // start fresh
+    hide(results);
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
   libraryLink.addEventListener('click', (e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
-    setHash('library'); // hashchange will trigger loadLibrary()
+    setHash('library');
   });
 
   /* ================= AUTH ================= */
@@ -316,23 +313,16 @@
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
     if (out.ok && out.token){
       setToken(out.token);
-
-      // Save user profile to backend
       await api('/api/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          name: su_name.value.trim(),
-          age: Number(su_age.value || 0),
-          dob: su_dob.value || null
+          name: payload.name,
+          age:  payload.age,
+          dob:  payload.dob
         })
       });
-
       setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
       proceedToAnalysis();
-    } else if (out.ok && out.user){
-      const li = await api('/api/login', { method:'POST', body: JSON.stringify({email:payload.email,password:payload.password}) });
-      if (li.ok && li.token){ setToken(li.token); proceedToAnalysis(); }
-      else setAuthMessage(li.error || 'Login required after signup', false);
     } else {
       setAuthMessage(out.error || 'Signup failed', false);
     }
@@ -346,7 +336,7 @@
     const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
     if (out.ok && out.token){
       setToken(out.token);
-      try { console.log('profile →', await api('/api/profile')); } catch {}
+      try { await api('/api/profile'); } catch {}
       setAuthMessage('Logged in ✅', true);
       proceedToAnalysis();
     } else {
@@ -362,7 +352,6 @@
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 
-  /* ============== LOGOUT (menu + header) ============== */
   function doLogout() {
     clearToken();
     try { menuPanel.style.display = 'none'; } catch {}
@@ -372,12 +361,10 @@
     goTo('account');
     hide(results);
   }
-  if (logoutBtn) logoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
-  if (logoutTop) logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
+  logoutBtn && logoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
+  logoutTop && logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
 
   /* ============== CLOUDINARY UPLOAD ============== */
-  let lastVideoUrl = '', lastPublicId = '';
-
   async function uploadToCloudinary(file){
     const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
     const fd = new FormData();
@@ -406,11 +393,9 @@
 
         uploadMsg.textContent = 'Uploaded ✅';
         uploadMsg.className = 'ok';
-        if (clipInfo)
-          clipInfo.innerHTML = `<span class="pill">${f.name}</span> 
-                                <a href="${lastVideoUrl}" target="_blank">View</a>`;
+        clipInfo.innerHTML = `<span class="pill">${f.name}</span> 
+                              <a href="${lastVideoUrl}" target="_blank">View</a>`;
 
-        // persist clip metadata
         await api('/api/clip', {
           method: 'POST',
           body: JSON.stringify({
@@ -437,37 +422,53 @@
   }
 
   /* ==================== ANALYZE ==================== */
+  function renderReport(data){
+    summary.textContent = data.summary || 'Summary not available.';
+    focusList.innerHTML = (data.focus || []).map(x=>`<li>${x}</li>`).join('');
+    drillList.innerHTML = (data.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+    results.classList.remove('hide');
+    results.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
   async function doAnalyze(){
     analyzeStatus.textContent='Analyzing…';
     analyzeStatus.className='muted';
+    viewLastLink.classList.add('hide');
+    lastAnalysisId = null;
 
     try{
       const payload = {
-        height: Number(heightEl.value||0),
+        heightFeet: Number(heightFeetEl.value||0),
+        heightInches: Number(heightInchesEl.value||0),
         weight: Number(weightEl.value||0),
         foot: footEl.value,
         position: positionEl.value,
+        skill: skillEl.value.trim(),
         videoUrl: lastVideoUrl,
         publicId: lastPublicId
       };
       if (!payload.videoUrl){
-        analyzeStatus.textContent='Upload a clip first';
-        analyzeStatus.className='err';
+        analyzeStatus.textContent='Upload a clip first'; 
+        analyzeStatus.className='err'; 
         return;
       }
 
       const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
-      if (!out.ok || !out.item){
+      if (!out.ok){
         analyzeStatus.textContent = out.error || 'Analyze failed';
         analyzeStatus.className='err';
         return;
       }
 
-      // Immediately load the saved report using the same flow as Library → View
-      analyzeStatus.textContent='Done ✅ Saved to your Library.';
+      lastAnalysisId = out.id || null;
+      analyzeStatus.textContent='Done ✅';
       analyzeStatus.className='ok';
 
-      await viewAnalysis(out.item.id);   // shows full report on Analysis page
+      renderReport(out);
+
+      if (lastAnalysisId) {
+        viewLastLink.classList.remove('hide');
+      }
     }catch(e){
       analyzeStatus.textContent='Network error';
       analyzeStatus.className='err';
@@ -475,16 +476,17 @@
     }
   }
 
-  /* ================ LIBRARY (its own page) ================ */
-  let libraryCache = [];
-
+  /* ================ LIBRARY ================ */
   function renderLibrary(items){
     goTo('library');
     libraryList.innerHTML = items.length
       ? items.map(i => `
           <div class="card" data-id="${i.id}">
             <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
-            <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
+            <div style="margin:6px 0">
+              ${i.skill ? `<span class="pill">${i.skill}</span>` : ''}
+              ${i.summary ? i.summary : '(no summary saved)'}
+            </div>
             <div class="row" style="gap:8px">
               ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
               <button class="block-btn" style="flex:0 0 auto;padding:6px 10px" data-action="view" data-id="${i.id}">View</button>
@@ -511,16 +513,14 @@
       const res = await api(`/api/analyses/${id}`);
       if (!res.ok) throw new Error(res.error || 'Not found');
 
-      const a = res.item || {};
       goTo('analysis');
 
-      summary.textContent = a.summary || 'Summary not available.';
-      focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
-
-      results.classList.remove('hide');
-      results.scrollIntoView({ behavior:'smooth', block:'start' });
-
+      const a = res.item || {};
+      renderReport({
+        summary: a.summary,
+        focus: a.focus,
+        drills: a.drills
+      });
     }catch(e){
       alert(e.message || 'Could not open analysis');
     }
@@ -538,7 +538,6 @@
     }
   }
 
-  // Event delegation for library buttons
   document.addEventListener('click', (e)=>{
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
@@ -555,16 +554,24 @@
     }
   });
 
+  /* ====== "View latest report" link ====== */
+  viewLastLink.addEventListener('click', (e)=>{
+    e.preventDefault();
+    if (lastAnalysisId){
+      viewAnalysis(lastAnalysisId);
+    } else {
+      setHash('library');
+    }
+  });
+
   /* ================= WIRE UP ================= */
   const signupBtnEl = $('signupBtn');
   const loginBtnEl  = $('loginBtn');
-  const uploadBtnEl = $('uploadBtn');
-  const analyzeBtnEl= $('analyzeBtn');
 
   signupBtnEl && (signupBtnEl.onclick = doSignup);
   loginBtnEl  && (loginBtnEl.onclick  = doLogin);
-  uploadBtnEl && (uploadBtnEl.onclick = doUpload);
-  analyzeBtnEl&& (analyzeBtnEl.onclick= doAnalyze);
+  uploadBtn   && (uploadBtn.onclick   = doUpload);
+  analyzeBtn  && (analyzeBtn.onclick  = doAnalyze);
 
   /* ================= BOOTSTRAP ================= */
   document.addEventListener('DOMContentLoaded', () => {
