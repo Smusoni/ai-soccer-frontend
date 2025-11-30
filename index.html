@@ -18,7 +18,7 @@
     .card{background:var(--card);border-radius:14px;padding:18px;margin:16px 0;border:1px solid var(--line)}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     input,select,button{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f0f0f;color:var(--text)}
-    input,select{min-width:160px}
+    input,select{min-width:220px}
     input::placeholder{color:#8a8f98}
     button{border:none;background:linear-gradient(90deg,#00ff95,#19d3ff);color:#000;font-weight:700;cursor:pointer}
     h1{font-size:36px;margin:8px 0;text-shadow:0 0 15px rgba(0,255,149,.35)}
@@ -54,9 +54,11 @@
     @media (min-width:720px){#logo{height:42px}}
     #logoutTop{display:none}
 
+    /* Ensure the menu icon is always visible on narrow desktop widths */
     @media (max-width: 1400px){
       .menu-container{ display:block !important; right:16px; top:16px; }
     }
+    /* If a parent ever clips it, make sure we can see it */
     .app-header, header, body{ overflow: visible; }
 
     /* ================= Overlay Fix ================= */
@@ -85,11 +87,12 @@
     </div>
 
     <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
-      <a id="pageTag" class="muted" style="text-decoration:none;font-size:14px">Analysis</a>
+      <a id="pageTag" class="muted" style="text-decoration:none; font-size:14px">Analysis</a>
       <button id="logoutTop" class="pill">Log out</button>
     </nav>
 
     <script>
+      // Set the logo path deterministically so it works locally and on GitHub Pages
       (function () {
         const el = document.getElementById('logo');
         if (!el) return;
@@ -132,24 +135,18 @@
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
 
+    <!-- Attributes -->
     <div class="grid">
-      <!-- Attributes -->
       <div class="card" style="margin:0">
-        <h4>Player Info</h4>
-
-        <!-- Height feet + inches -->
+        <h4>Attributes</h4>
         <div class="row">
-          <input id="height_feet" type="number" placeholder="Height (ft)" min="3" max="7">
-          <input id="height_inches" type="number" placeholder("Height (in)") min="0" max="11">
+          <input id="height" type="number" placeholder="Height (inches)">
           <input id="weight" type="number" placeholder="Weight (lbs)">
         </div>
-
         <div class="row">
           <select id="foot">
             <option value="" disabled selected>Dominant Foot</option>
-            <option>Right</option>
-            <option>Left</option>
-            <option>Both</option>
+            <option>Right</option><option>Left</option><option>Both</option>
           </select>
           <select id="position">
             <option value="" disabled selected>Position</option>
@@ -159,12 +156,7 @@
             <option>Right Wing</option><option>Left Wing</option><option>Striker</option>
           </select>
         </div>
-
-        <div class="row">
-          <input id="skill" type="text" placeholder="What skill are you working on? (e.g. shooting, 1v1 dribbling)">
-        </div>
-
-        <p class="muted">We’ll pair this with your clip to give focused feedback and drills.</p>
+        <p class="muted">We’ll pair these with your video to personalize feedback &amp; drills.</p>
       </div>
 
       <!-- Video upload -->
@@ -203,7 +195,7 @@
     </div>
   </section>
 
-  <!-- =========== LIBRARY PAGE =========== -->
+  <!-- =========== LIBRARY PAGE (separate screen) =========== -->
   <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
     <h3 id="libraryTitle">Your Library</h3>
     <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
@@ -241,20 +233,22 @@
 
   /* ================ ELEMENT REFS ================ */
   const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
-  const heightFeetEl=$('height_feet'), heightInchesEl=$('height_inches'), weightEl=$('weight');
-  const footEl=$('foot'), positionEl=$('position'), skillEl=$('skill');
+  const heightEl=$('height'), weightEl=$('weight'), footEl=$('foot'), positionEl=$('position');
   const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
   const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus');
   const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList');
 
+  // Library refs
   const libraryPage = $('libraryPage');
   const libraryList = $('libraryList');
   const pageTag     = $('pageTag');
   const logoutTop   = $('logoutTop');
 
+  // splash
   const splash = document.getElementById('splash');
   function hideSplash(){ if (splash) splash.style.display='none'; }
 
+  // menu
   const menuContainer=document.querySelector('.menu-container');
   const menuIcon=$('menuIcon'), menuPanel=$('menu');
   const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
@@ -268,7 +262,7 @@
   });
 
   /* =================== MINI ROUTER =================== */
-  function goTo(screen){
+  function goTo(screen){ // 'analysis' | 'library' | 'account'
     hide(accountCard); hide(analysisCard); hide(libraryPage);
     if (screen === 'analysis') { show(analysisCard); if (pageTag) pageTag.textContent='Analysis'; }
     else if (screen === 'library') { show(libraryPage); if (pageTag) pageTag.textContent='Library'; }
@@ -286,17 +280,18 @@
     else { setHash('analysis'); }
   });
 
+  // Menu -> routes
   newAnalysisLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
     setHash('analysis');
-    hide(results);
+    hide(results); // start fresh
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
   libraryLink.addEventListener('click', (e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
-    setHash('library');
+    setHash('library'); // hashchange will trigger loadLibrary()
   });
 
   /* ================= AUTH ================= */
@@ -322,6 +317,7 @@
     if (out.ok && out.token){
       setToken(out.token);
 
+      // Save user profile to backend
       await api('/api/profile', {
         method: 'PUT',
         body: JSON.stringify({
@@ -366,6 +362,7 @@
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 
+  /* ============== LOGOUT (menu + header) ============== */
   function doLogout() {
     clearToken();
     try { menuPanel.style.display = 'none'; } catch {}
@@ -379,6 +376,8 @@
   if (logoutTop) logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
 
   /* ============== CLOUDINARY UPLOAD ============== */
+  let lastVideoUrl = '', lastPublicId = '';
+
   async function uploadToCloudinary(file){
     const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
     const fd = new FormData();
@@ -387,8 +386,6 @@
     const r = await fetch(url, { method:'POST', body: fd });
     return await r.json();
   }
-
-  let lastVideoUrl = '', lastPublicId = '';
 
   async function doUpload() {
     const f = clipFile.files?.[0];
@@ -413,6 +410,7 @@
           clipInfo.innerHTML = `<span class="pill">${f.name}</span> 
                                 <a href="${lastVideoUrl}" target="_blank">View</a>`;
 
+        // persist clip metadata
         await api('/api/clip', {
           method: 'POST',
           body: JSON.stringify({
@@ -438,46 +436,46 @@
     }
   }
 
-  /* ==================== ANALYZE (REAL-TIME) ==================== */
+  /* ==================== ANALYZE ==================== */
   async function doAnalyze(){
-    analyzeStatus.textContent='Analyzing…'; analyzeStatus.className='muted';
+    analyzeStatus.textContent='Analyzing…';
+    analyzeStatus.className='muted';
 
     try{
       const payload = {
-        heightFeet:   Number(heightFeetEl.value || 0),
-        heightInches: Number(heightInchesEl.value || 0),
-        weight:       Number(weightEl.value || 0),
-        foot:         footEl.value,
-        position:     positionEl.value,
-        skill:        skillEl.value.trim(),
-        videoUrl:     lastVideoUrl,
-        publicId:     lastPublicId
+        height: Number(heightEl.value||0),
+        weight: Number(weightEl.value||0),
+        foot: footEl.value,
+        position: positionEl.value,
+        videoUrl: lastVideoUrl,
+        publicId: lastPublicId
       };
       if (!payload.videoUrl){
-        analyzeStatus.textContent='Upload a clip first'; analyzeStatus.className='err'; return;
+        analyzeStatus.textContent='Upload a clip first';
+        analyzeStatus.className='err';
+        return;
       }
 
       const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
-      if (!out.ok){
+      if (!out.ok || !out.item){
         analyzeStatus.textContent = out.error || 'Analyze failed';
         analyzeStatus.className='err';
         return;
       }
 
-      summary.textContent = out.summary || 'Summary not available.';
-      focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+      // Immediately load the saved report using the same flow as Library → View
+      analyzeStatus.textContent='Done ✅ Saved to your Library.';
+      analyzeStatus.className='ok';
 
-      analyzeStatus.textContent='Done ✅'; analyzeStatus.className='ok';
-      results.classList.remove('hide');
-      results.scrollIntoView({behavior:'smooth', block:'start'});
+      await viewAnalysis(out.item.id);   // shows full report on Analysis page
     }catch(e){
-      analyzeStatus.textContent='Network error'; analyzeStatus.className='err';
+      analyzeStatus.textContent='Network error';
+      analyzeStatus.className='err';
       console.error(e);
     }
   }
 
-  /* ================ LIBRARY ================= */
+  /* ================ LIBRARY (its own page) ================ */
   let libraryCache = [];
 
   function renderLibrary(items){
@@ -513,9 +511,9 @@
       const res = await api(`/api/analyses/${id}`);
       if (!res.ok) throw new Error(res.error || 'Not found');
 
+      const a = res.item || {};
       goTo('analysis');
 
-      const a = res.item || {};
       summary.textContent = a.summary || 'Summary not available.';
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
       drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
@@ -540,6 +538,7 @@
     }
   }
 
+  // Event delegation for library buttons
   document.addEventListener('click', (e)=>{
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
