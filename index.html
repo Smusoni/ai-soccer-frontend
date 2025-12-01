@@ -22,6 +22,7 @@
     button{border:none;background:linear-gradient(90deg,#00ff95,#19d3ff);color:#000;font-weight:700;cursor:pointer}
     h1{font-size:36px;margin:8px 0;text-shadow:0 0 15px rgba(0,255,149,.35)}
     h3{margin:10px 0 14px}
+    h4{margin:6px 0 10px}
     .muted{color:var(--muted)}
     .hide{display:none!important}
     .ok{color:#00e676}
@@ -58,7 +59,9 @@
     }
     .app-header,header,body{overflow:visible}
 
-    #landingCard,#accountCard,#analysisCard,#libraryPage,.menu-container{position:relative;z-index:10}
+    #accountCard,#infoCard,#privacyCard,#feedbackCard,#analysisCard,#libraryPage,.menu-container{
+      position:relative;z-index:10
+    }
   </style>
 </head>
 <body>
@@ -98,32 +101,6 @@
     </script>
   </header>
 
-  <!-- =========== LANDING / INFO (shown before login) =========== -->
-  <section class="card container" id="landingCard">
-    <h3>Welcome to Ball Knowledge (Part 1)</h3>
-    <p class="muted">
-      Ball Knowledge helps players turn training clips into clear, simple coaching feedback.
-      Upload a short video of what you’re working on and get:
-    </p>
-    <ul>
-      <li>✅ A focused written summary of your session</li>
-      <li>✅ 3–6 key focus points for your technique and decisions</li>
-      <li>✅ 3–6 suggested drills with video links you can train with next time</li>
-    </ul>
-    <p class="muted" style="margin-top:8px;">
-      <strong>How it works:</strong> Create an account → Fill in your details →
-      Upload a clip → Hit <strong>Analyze</strong> → Read your report → Re-watch your clip with a plan.
-    </p>
-    <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
-    <h4 style="margin:0 0 6px;">Privacy & Data</h4>
-    <p class="muted" style="font-size:13px;line-height:1.5;">
-      • Your clips are used only to generate your training report.<br>
-      • We don’t sell your data.<br>
-      • You can delete reports from your Library at any time.<br>
-      • This is an early beta—please avoid uploading sensitive or private footage.
-    </p>
-  </section>
-
   <!-- =========== ACCOUNT (only before login) =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
@@ -152,6 +129,70 @@
       </div>
     </div>
     <p id="authMsg" class="muted"></p>
+  </section>
+
+  <!-- =========== SIMPLE LANDING / INFO (under Account) =========== -->
+  <section class="card container" id="infoCard">
+    <h3>What is Ball Knowledge?</h3>
+    <p class="muted">
+      Ball Knowledge is a training partner for players who want to understand their game, not just watch it.
+      In Part 1, you upload a <strong>short training clip</strong> (shooting, dribbling, scanning, passing, etc.)
+      and get a personalized breakdown with focus points and drills you can use in your next session.
+    </p>
+
+    <h4>How it works (Part 1 – Training Clip Analysis)</h4>
+    <ol class="muted">
+      <li>Create an account (or log in).</li>
+      <li>Go to <strong>New Analysis</strong>.</li>
+      <li>Enter your details (height, weight, position, dominant foot, and what skill you’re working on).</li>
+      <li>Upload a training clip.</li>
+      <li>Press <strong>Analyze</strong> and wait for your report.</li>
+      <li>Read your focus areas and save the drills for your next session.</li>
+    </ol>
+
+    <p class="muted">
+      Game analysis and “plays like” comps are coming in a future update (Part 2).
+    </p>
+  </section>
+
+  <!-- =========== PRIVACY / TERMS (under Account) =========== -->
+  <section class="card container" id="privacyCard">
+    <h3>Privacy & Data</h3>
+    <p class="muted">
+      This is an early version (soft launch) of Ball Knowledge. We keep things simple:
+    </p>
+    <ul class="muted">
+      <li>Your account stores your name, email, age, and basic profile details.</li>
+      <li>Videos are uploaded to Cloudinary and used only to generate your reports.</li>
+      <li>Reports are saved to your account so you can revisit them in your Library.</li>
+      <li>You can delete any report from your Library at any time.</li>
+    </ul>
+    <p class="muted" style="font-size:12px">
+      By using Ball Knowledge, you agree that your clips and reports may be used to
+      improve the app experience over time (never shared publicly without your permission).
+      A full Privacy Policy and Terms of Use will be added before a public App Store launch.
+    </p>
+  </section>
+
+  <!-- =========== FEEDBACK / BUG REPORT (under Account) =========== -->
+  <section class="card container" id="feedbackCard">
+    <h3>Feedback & Bug Reports</h3>
+    <p class="muted">
+      This is a soft-launch version. If something feels off, confusing, or broken,
+      your feedback helps shape the next version.
+    </p>
+    <ul class="muted">
+      <li>If a drill link doesn’t work, or a report looks wrong, let us know.</li>
+      <li>Share what type of training clips you’d like better support for (finishing, 1v1s, scanning, etc.).</li>
+      <li>Tell us what would make this your go-to training tool.</li>
+    </ul>
+    <p class="muted">
+      You can send feedback directly to:
+      <br>
+      <a class="link" href="mailto:sydnyjr@gmail.com?subject=Ball%20Knowledge%20Feedback">
+        Email: sydnyjr@gmail.com
+      </a>
+    </p>
   </section>
 
   <!-- =========== ANALYSIS (after login) =========== -->
@@ -263,8 +304,10 @@
   }
 
   /* ================ ELEMENT REFS ================ */
-  const landingCard  = $('landingCard');
   const accountCard  = $('accountCard');
+  const infoCard     = $('infoCard');
+  const privacyCard  = $('privacyCard');
+  const feedbackCard = $('feedbackCard');
   const analysisCard = $('analysisCard');
   const libraryPage  = $('libraryPage');
   const libraryList  = $('libraryList');
@@ -314,8 +357,8 @@
 
   /* =================== MINI ROUTER =================== */
   function goTo(screen){ // 'account' | 'analysis' | 'library'
-    hide(landingCard); hide(accountCard); hide(analysisCard); hide(libraryPage);
-
+    hide(accountCard); hide(analysisCard); hide(libraryPage);
+    // Info/privacy/feedback are informational, visible on both states when logged out
     if (screen === 'analysis') {
       show(analysisCard);
       if (pageTag) pageTag.textContent = 'Analysis';
@@ -323,8 +366,6 @@
       show(libraryPage);
       if (pageTag) pageTag.textContent = 'Library';
     } else {
-      // Account screen: show landing + account
-      show(landingCard);
       show(accountCard);
       if (pageTag) pageTag.textContent = 'Account';
     }
@@ -537,7 +578,7 @@
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
 
-      // "View report" link just scrolls back down to the report
+      // Make "View report" link appear and scroll to report when clicked
       viewLatestLink.classList.remove('hide');
       viewLatestLink.onclick = (e)=>{
         e.preventDefault();
@@ -645,7 +686,7 @@
         if (page === 'library') { loadLibrary(); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
-        // Logged out – hide menu & show account + landing
+        // Logged out – hide menu & show account
         if (menuContainer) menuContainer.style.display='none';
         if (logoutTop) logoutTop.style.display='none';
         goTo('account');
