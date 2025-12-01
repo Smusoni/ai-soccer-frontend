@@ -22,7 +22,6 @@
     button{border:none;background:linear-gradient(90deg,#00ff95,#19d3ff);color:#000;font-weight:700;cursor:pointer}
     h1{font-size:36px;margin:8px 0;text-shadow:0 0 15px rgba(0,255,149,.35)}
     h3{margin:10px 0 14px}
-    h4{margin:6px 0 10px}
     .muted{color:var(--muted)}
     .hide{display:none!important}
     .ok{color:#00e676}
@@ -59,7 +58,7 @@
     }
     .app-header,header,body{overflow:visible}
 
-    #accountCard,#infoCard,#privacyCard,#feedbackCard,#analysisCard,#libraryPage,.menu-container{
+    #accountCard,#analysisCard,#libraryPage,.menu-container,#landingSection,#privacySection,#feedbackSection{
       position:relative;z-index:10
     }
   </style>
@@ -131,67 +130,43 @@
     <p id="authMsg" class="muted"></p>
   </section>
 
-  <!-- =========== SIMPLE LANDING / INFO (under Account) =========== -->
-  <section class="card container" id="infoCard">
+  <!-- =========== LANDING / INFO / PRIVACY / FEEDBACK (ACCOUNT ONLY) =========== -->
+  <section class="card container" id="landingSection">
     <h3>What is Ball Knowledge?</h3>
     <p class="muted">
-      Ball Knowledge is a training partner for players who want to understand their game, not just watch it.
-      In Part 1, you upload a <strong>short training clip</strong> (shooting, dribbling, scanning, passing, etc.)
-      and get a personalized breakdown with focus points and drills you can use in your next session.
+      Ball Knowledge is your personal soccer assistant. Upload a training clip,
+      tell us what skill you’re working on, and get a clear, coach-style report
+      with focus areas and suggested drills so you know exactly what to work on next.
     </p>
-
-    <h4>How it works (Part 1 – Training Clip Analysis)</h4>
-    <ol class="muted">
-      <li>Create an account (or log in).</li>
-      <li>Go to <strong>New Analysis</strong>.</li>
-      <li>Enter your details (height, weight, position, dominant foot, and what skill you’re working on).</li>
-      <li>Upload a training clip.</li>
-      <li>Press <strong>Analyze</strong> and wait for your report.</li>
-      <li>Read your focus areas and save the drills for your next session.</li>
-    </ol>
-
-    <p class="muted">
-      Game analysis and “plays like” comps are coming in a future update (Part 2).
-    </p>
+    <ul>
+      <li>Built for players who want to get better between training sessions</li>
+      <li>Simple: record on your phone, upload, and get feedback</li>
+      <li>No fancy camera or GPS required</li>
+    </ul>
   </section>
 
-  <!-- =========== PRIVACY / TERMS (under Account) =========== -->
-  <section class="card container" id="privacyCard">
+  <section class="card container" id="privacySection">
     <h3>Privacy & Data</h3>
     <p class="muted">
-      This is an early version (soft launch) of Ball Knowledge. We keep things simple:
+      Your clips and reports stay tied to your account. We use them only to generate
+      your analysis and to help improve the quality of feedback over time.
     </p>
-    <ul class="muted">
-      <li>Your account stores your name, email, age, and basic profile details.</li>
-      <li>Videos are uploaded to Cloudinary and used only to generate your reports.</li>
-      <li>Reports are saved to your account so you can revisit them in your Library.</li>
-      <li>You can delete any report from your Library at any time.</li>
+    <ul>
+      <li>We don’t sell your data</li>
+      <li>You can delete reports from your Library anytime</li>
+      <li>Use short clips that you’re comfortable sharing</li>
     </ul>
-    <p class="muted" style="font-size:12px">
-      By using Ball Knowledge, you agree that your clips and reports may be used to
-      improve the app experience over time (never shared publicly without your permission).
-      A full Privacy Policy and Terms of Use will be added before a public App Store launch.
-    </p>
   </section>
 
-  <!-- =========== FEEDBACK / BUG REPORT (under Account) =========== -->
-  <section class="card container" id="feedbackCard">
+  <section class="card container" id="feedbackSection">
     <h3>Feedback & Bug Reports</h3>
     <p class="muted">
-      This is a soft-launch version. If something feels off, confusing, or broken,
-      your feedback helps shape the next version.
+      If something breaks or you have ideas for new features, I’d love to hear it.
+      During this early version, your feedback helps shape where Ball Knowledge goes next.
     </p>
-    <ul class="muted">
-      <li>If a drill link doesn’t work, or a report looks wrong, let us know.</li>
-      <li>Share what type of training clips you’d like better support for (finishing, 1v1s, scanning, etc.).</li>
-      <li>Tell us what would make this your go-to training tool.</li>
-    </ul>
     <p class="muted">
-      You can send feedback directly to:
-      <br>
-      <a class="link" href="mailto:sydnyjr@gmail.com?subject=Ball%20Knowledge%20Feedback">
-        Email: sydnyjr@gmail.com
-      </a>
+      You can send feedback to: <br>
+      <strong>skillzwithsyd@&lrm;gmail.com</strong> (or whatever address you prefer).
     </p>
   </section>
 
@@ -305,15 +280,16 @@
 
   /* ================ ELEMENT REFS ================ */
   const accountCard  = $('accountCard');
-  const infoCard     = $('infoCard');
-  const privacyCard  = $('privacyCard');
-  const feedbackCard = $('feedbackCard');
   const analysisCard = $('analysisCard');
   const libraryPage  = $('libraryPage');
   const libraryList  = $('libraryList');
   const pageTag      = $('pageTag');
   const logoutTop    = $('logoutTop');
   const splash       = $('splash');
+
+  const landingSection  = $('landingSection');
+  const privacySection  = $('privacySection');
+  const feedbackSection = $('feedbackSection');
 
   const heightFeetEl   = $('heightFeet');
   const heightInchesEl = $('heightInches');
@@ -327,23 +303,23 @@
   const uploadMsg = $('uploadMsg');
   const clipInfo  = $('clipInfo');
 
-  const analyzeBtn      = $('analyzeBtn');
-  const analyzeStatus   = $('analyzeStatus');
-  const viewLatestLink  = $('viewLatestLink');
+  const analyzeBtn     = $('analyzeBtn');
+  const analyzeStatus  = $('analyzeStatus');
+  const viewLatestLink = $('viewLatestLink');
 
   const results   = $('results');
   const summary   = $('summary');
   const focusList = $('focusList');
   const drillList = $('drillList');
 
-  const authMsg  = $('authMsg');
-  const su_name  = $('su_name');
-  const su_email = $('su_email');
-  const su_password = $('su_password');
-  const su_age   = $('su_age');
-  const su_dob   = $('su_dob');
-  const li_email = $('li_email');
-  const li_password = $('li_password');
+  const authMsg      = $('authMsg');
+  const su_name      = $('su_name');
+  const su_email     = $('su_email');
+  const su_password  = $('su_password');
+  const su_age       = $('su_age');
+  const su_dob       = $('su_dob');
+  const li_email     = $('li_email');
+  const li_password  = $('li_password');
 
   // Menu
   const menuContainer   = document.querySelector('.menu-container');
@@ -358,7 +334,8 @@
   /* =================== MINI ROUTER =================== */
   function goTo(screen){ // 'account' | 'analysis' | 'library'
     hide(accountCard); hide(analysisCard); hide(libraryPage);
-    // Info/privacy/feedback are informational, visible on both states when logged out
+    [landingSection, privacySection, feedbackSection].forEach(hide);
+
     if (screen === 'analysis') {
       show(analysisCard);
       if (pageTag) pageTag.textContent = 'Analysis';
@@ -367,9 +344,18 @@
       if (pageTag) pageTag.textContent = 'Library';
     } else {
       show(accountCard);
+      show(landingSection);
+      show(privacySection);
+      show(feedbackSection);
       if (pageTag) pageTag.textContent = 'Account';
     }
-    if (screen !== 'account' && menuContainer) menuContainer.style.display = 'block';
+
+    if (screen !== 'account' && menuContainer) {
+      menuContainer.style.display = 'block';
+    }
+    if (screen === 'account' && menuContainer) {
+      menuContainer.style.display = 'none';
+    }
   }
 
   function setHash(screen){ location.hash = `#/${screen}`; }
@@ -451,10 +437,7 @@
   }
 
   function proceedToAnalysis(){
-    // Show menu & header logout
-    if (menuContainer) menuContainer.style.display = 'block';
     if (logoutTop) logoutTop.style.display = 'inline-block';
-
     setHash('analysis');
     goTo('analysis');
     hideSplash();
@@ -506,7 +489,6 @@
         uploadMsg.className   = 'ok';
         clipInfo.innerHTML = `<span class="pill">${f.name}</span> <a class="link" href="${lastVideoUrl}" target="_blank">View</a>`;
 
-        // Save clip metadata to backend
         await api('/api/clip', {
           method:'POST',
           body: JSON.stringify({
@@ -568,17 +550,17 @@
         return;
       }
 
-      // Fill report on same page
       summary.textContent = out.summary || 'Summary not available.';
       focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+      drillList.innerHTML = (out.drills || []).map(
+        d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`
+      ).join('');
 
       analyzeStatus.textContent = 'Done ✅';
       analyzeStatus.className   = 'ok';
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
 
-      // Make "View report" link appear and scroll to report when clicked
       viewLatestLink.classList.remove('hide');
       viewLatestLink.onclick = (e)=>{
         e.preventDefault();
@@ -628,12 +610,13 @@
       if (!res.ok) throw new Error(res.error || 'Not found');
 
       const a = res.item || {};
-      // Show Analysis page with that report
       setHash('analysis');
       goTo('analysis');
       summary.textContent = a.summary || 'Summary not available.';
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+      drillList.innerHTML = (a.drills || []).map(
+        d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`
+      ).join('');
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
       viewLatestLink.classList.remove('hide');
@@ -658,7 +641,6 @@
     }
   }
 
-  // Library button delegation
   document.addEventListener('click',(e)=>{
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
@@ -679,15 +661,11 @@
   document.addEventListener('DOMContentLoaded', () => {
     try{
       if (getToken()){
-        // User already logged in
-        if (menuContainer) menuContainer.style.display='block';
         if (logoutTop) logoutTop.style.display='inline-block';
         const page = currentHash();
         if (page === 'library') { loadLibrary(); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
-        // Logged out – hide menu & show account
-        if (menuContainer) menuContainer.style.display='none';
         if (logoutTop) logoutTop.style.display='none';
         goTo('account');
       }
