@@ -58,10 +58,7 @@
     }
     .app-header,header,body{overflow:visible}
 
-    #accountCard,#analysisCard,#libraryPage,.menu-container{position:relative;z-index:10}
-
-    /* Tiny footer */
-    footer{margin:24px auto 32px;max-width:900px;padding:0 16px;font-size:12px;color:var(--muted);text-align:center}
+    #landingCard,#accountCard,#analysisCard,#libraryPage,.menu-container{position:relative;z-index:10}
   </style>
 </head>
 <body>
@@ -82,10 +79,7 @@
   <header class="container app-header">
     <div class="brand">
       <img id="logo" alt="Ball Knowledge Logo">
-      <div>
-        <h1>Ball Knowledge</h1>
-        <div class="muted" style="font-size:13px;">Part 1 · Training Clip Analysis (Beta)</div>
-      </div>
+      <h1>Ball Knowledge</h1>
     </div>
 
     <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
@@ -104,12 +98,35 @@
     </script>
   </header>
 
+  <!-- =========== LANDING / INFO (shown before login) =========== -->
+  <section class="card container" id="landingCard">
+    <h3>Welcome to Ball Knowledge (Part 1)</h3>
+    <p class="muted">
+      Ball Knowledge helps players turn training clips into clear, simple coaching feedback.
+      Upload a short video of what you’re working on and get:
+    </p>
+    <ul>
+      <li>✅ A focused written summary of your session</li>
+      <li>✅ 3–6 key focus points for your technique and decisions</li>
+      <li>✅ 3–6 suggested drills with video links you can train with next time</li>
+    </ul>
+    <p class="muted" style="margin-top:8px;">
+      <strong>How it works:</strong> Create an account → Fill in your details →
+      Upload a clip → Hit <strong>Analyze</strong> → Read your report → Re-watch your clip with a plan.
+    </p>
+    <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
+    <h4 style="margin:0 0 6px;">Privacy & Data</h4>
+    <p class="muted" style="font-size:13px;line-height:1.5;">
+      • Your clips are used only to generate your training report.<br>
+      • We don’t sell your data.<br>
+      • You can delete reports from your Library at any time.<br>
+      • This is an early beta—please avoid uploading sensitive or private footage.
+    </p>
+  </section>
+
   <!-- =========== ACCOUNT (only before login) =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
-    <p class="muted" style="margin-bottom:12px;">
-      Create an account to save your reports and access them anytime.
-    </p>
     <div class="grid">
       <div>
         <p class="muted">Create your account</p>
@@ -140,9 +157,6 @@
   <!-- =========== ANALYSIS (after login) =========== -->
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
-    <p class="muted" style="margin-top:-4px;margin-bottom:10px;">
-      Step 1: Fill in your info · Step 2: Upload your clip · Step 3: Press “Analyze” and scroll to your report.
-    </p>
 
     <div class="grid">
       <!-- Player + Session Info -->
@@ -183,9 +197,6 @@
         </div>
         <p id="uploadMsg" class="muted"></p>
         <div id="clipInfo" class="muted"></div>
-        <p class="muted" style="font-size:12px;margin-top:8px;">
-          Short training clips (5–30 seconds) work best in this beta.
-        </p>
       </div>
     </div>
 
@@ -199,7 +210,6 @@
     <!-- Results -->
     <div id="results" class="hide" style="margin-top:12px">
       <h4>Your Report</h4>
-      <div id="reportMeta" class="muted" style="font-size:13px;margin:4px 0 6px;"></div>
       <div id="summary" class="muted" style="margin:8px 0 12px"></div>
 
       <div class="row">
@@ -221,10 +231,6 @@
     <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
     <div id="libraryList"></div>
   </section>
-
-  <footer>
-    Ball Knowledge · Training Clip Analysis (Beta) · Reports are suggestions, not medical advice.
-  </footer>
 
   <script>
   /* =================== CONFIG =================== */
@@ -257,7 +263,8 @@
   }
 
   /* ================ ELEMENT REFS ================ */
-  const accountCard = $('accountCard');
+  const landingCard  = $('landingCard');
+  const accountCard  = $('accountCard');
   const analysisCard = $('analysisCard');
   const libraryPage  = $('libraryPage');
   const libraryList  = $('libraryList');
@@ -281,11 +288,10 @@
   const analyzeStatus   = $('analyzeStatus');
   const viewLatestLink  = $('viewLatestLink');
 
-  const results     = $('results');
-  const summary     = $('summary');
-  const focusList   = $('focusList');
-  const drillList   = $('drillList');
-  const reportMeta  = $('reportMeta');
+  const results   = $('results');
+  const summary   = $('summary');
+  const focusList = $('focusList');
+  const drillList = $('drillList');
 
   const authMsg  = $('authMsg');
   const su_name  = $('su_name');
@@ -308,7 +314,8 @@
 
   /* =================== MINI ROUTER =================== */
   function goTo(screen){ // 'account' | 'analysis' | 'library'
-    hide(accountCard); hide(analysisCard); hide(libraryPage);
+    hide(landingCard); hide(accountCard); hide(analysisCard); hide(libraryPage);
+
     if (screen === 'analysis') {
       show(analysisCard);
       if (pageTag) pageTag.textContent = 'Analysis';
@@ -316,6 +323,8 @@
       show(libraryPage);
       if (pageTag) pageTag.textContent = 'Library';
     } else {
+      // Account screen: show landing + account
+      show(landingCard);
       show(accountCard);
       if (pageTag) pageTag.textContent = 'Account';
     }
@@ -519,13 +528,6 @@
       }
 
       // Fill report on same page
-      const sessionSkill = out.skill || payload.skill;
-      if (reportMeta){
-        reportMeta.textContent = sessionSkill
-          ? `Session focus: ${sessionSkill}`
-          : '';
-      }
-
       summary.textContent = out.summary || 'Summary not available.';
       focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
       drillList.innerHTML = (out.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
@@ -535,7 +537,7 @@
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
 
-      // "View report" link scrolls you to the report
+      // "View report" link just scrolls back down to the report
       viewLatestLink.classList.remove('hide');
       viewLatestLink.onclick = (e)=>{
         e.preventDefault();
@@ -557,9 +559,6 @@
       ? items.map(i => `
           <div class="card" data-id="${i.id}">
             <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
-            <div class="muted" style="font-size:12px;margin:2px 0;">
-              ${i.skill ? `Session focus: ${i.skill}` : ''}
-            </div>
             <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
             <div class="row" style="gap:8px">
               ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
@@ -591,11 +590,6 @@
       // Show Analysis page with that report
       setHash('analysis');
       goTo('analysis');
-
-      if (reportMeta){
-        reportMeta.textContent = a.skill ? `Session focus: ${a.skill}` : '';
-      }
-
       summary.textContent = a.summary || 'Summary not available.';
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
       drillList.innerHTML = (a.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
@@ -651,7 +645,7 @@
         if (page === 'library') { loadLibrary(); }
         else { setHash('analysis'); goTo('analysis'); }
       } else {
-        // Logged out – hide menu & show account
+        // Logged out – hide menu & show account + landing
         if (menuContainer) menuContainer.style.display='none';
         if (logoutTop) logoutTop.style.display='none';
         goTo('account');
