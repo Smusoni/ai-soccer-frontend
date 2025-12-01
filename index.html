@@ -59,6 +59,9 @@
     .app-header,header,body{overflow:visible}
 
     #accountCard,#analysisCard,#libraryPage,.menu-container{position:relative;z-index:10}
+
+    /* Tiny footer */
+    footer{margin:24px auto 32px;max-width:900px;padding:0 16px;font-size:12px;color:var(--muted);text-align:center}
   </style>
 </head>
 <body>
@@ -79,7 +82,10 @@
   <header class="container app-header">
     <div class="brand">
       <img id="logo" alt="Ball Knowledge Logo">
-      <h1>Ball Knowledge</h1>
+      <div>
+        <h1>Ball Knowledge</h1>
+        <div class="muted" style="font-size:13px;">Part 1 · Training Clip Analysis (Beta)</div>
+      </div>
     </div>
 
     <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
@@ -101,6 +107,9 @@
   <!-- =========== ACCOUNT (only before login) =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
+    <p class="muted" style="margin-bottom:12px;">
+      Create an account to save your reports and access them anytime.
+    </p>
     <div class="grid">
       <div>
         <p class="muted">Create your account</p>
@@ -131,6 +140,9 @@
   <!-- =========== ANALYSIS (after login) =========== -->
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
+    <p class="muted" style="margin-top:-4px;margin-bottom:10px;">
+      Step 1: Fill in your info · Step 2: Upload your clip · Step 3: Press “Analyze” and scroll to your report.
+    </p>
 
     <div class="grid">
       <!-- Player + Session Info -->
@@ -171,6 +183,9 @@
         </div>
         <p id="uploadMsg" class="muted"></p>
         <div id="clipInfo" class="muted"></div>
+        <p class="muted" style="font-size:12px;margin-top:8px;">
+          Short training clips (5–30 seconds) work best in this beta.
+        </p>
       </div>
     </div>
 
@@ -184,6 +199,7 @@
     <!-- Results -->
     <div id="results" class="hide" style="margin-top:12px">
       <h4>Your Report</h4>
+      <div id="reportMeta" class="muted" style="font-size:13px;margin:4px 0 6px;"></div>
       <div id="summary" class="muted" style="margin:8px 0 12px"></div>
 
       <div class="row">
@@ -206,7 +222,11 @@
     <div id="libraryList"></div>
   </section>
 
-    <script>
+  <footer>
+    Ball Knowledge · Training Clip Analysis (Beta) · Reports are suggestions, not medical advice.
+  </footer>
+
+  <script>
   /* =================== CONFIG =================== */
   const BASE =
     location.hostname.endsWith('github.io')
@@ -261,10 +281,11 @@
   const analyzeStatus   = $('analyzeStatus');
   const viewLatestLink  = $('viewLatestLink');
 
-  const results   = $('results');
-  const summary   = $('summary');
-  const focusList = $('focusList');
-  const drillList = $('drillList');
+  const results     = $('results');
+  const summary     = $('summary');
+  const focusList   = $('focusList');
+  const drillList   = $('drillList');
+  const reportMeta  = $('reportMeta');
 
   const authMsg  = $('authMsg');
   const su_name  = $('su_name');
@@ -284,22 +305,6 @@
   const logoutBtn       = $('logout');
 
   function hideSplash(){ if (splash) splash.style.display='none'; }
-
-  /* ============== RENDER A REPORT (ONE PLACE) ============== */
-  function renderReport(data){
-    const safeFocus  = Array.isArray(data?.focus)  ? data.focus  : [];
-    const safeDrills = Array.isArray(data?.drills) ? data.drills : [];
-
-    summary.textContent = data?.summary || 'Summary not available.';
-
-    focusList.innerHTML = safeFocus
-      .map(x => `<li>${x}</li>`)
-      .join('');
-
-    drillList.innerHTML = safeDrills
-      .map(d => `<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`)
-      .join('');
-  }
 
   /* =================== MINI ROUTER =================== */
   function goTo(screen){ // 'account' | 'analysis' | 'library'
@@ -513,31 +518,24 @@
         return;
       }
 
-      // Preferred: use the data returned by /api/analyze
-      let reportSource = out;
-
-      // Fallback: if the response doesn't actually have a real report,
-      // pull the latest saved analysis (same as Library) and use that.
-      const looksEmpty =
-        !reportSource.summary &&
-        !(Array.isArray(reportSource.focus)  && reportSource.focus.length) &&
-        !(Array.isArray(reportSource.drills) && reportSource.drills.length);
-
-      if (looksEmpty) {
-        const lib = await api('/api/analyses');
-        if (lib.ok && Array.isArray(lib.items) && lib.items.length){
-          reportSource = lib.items[0]; // newest report
-        }
+      // Fill report on same page
+      const sessionSkill = out.skill || payload.skill;
+      if (reportMeta){
+        reportMeta.textContent = sessionSkill
+          ? `Session focus: ${sessionSkill}`
+          : '';
       }
 
-      renderReport(reportSource);
+      summary.textContent = out.summary || 'Summary not available.';
+      focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
+      drillList.innerHTML = (out.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
 
       analyzeStatus.textContent = 'Done ✅';
       analyzeStatus.className   = 'ok';
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
 
-      // "View report" link just scrolls you back to the report
+      // "View report" link scrolls you to the report
       viewLatestLink.classList.remove('hide');
       viewLatestLink.onclick = (e)=>{
         e.preventDefault();
@@ -559,6 +557,9 @@
       ? items.map(i => `
           <div class="card" data-id="${i.id}">
             <div class="muted" style="font-size:12px">${new Date(i.created_at).toLocaleString()}</div>
+            <div class="muted" style="font-size:12px;margin:2px 0;">
+              ${i.skill ? `Session focus: ${i.skill}` : ''}
+            </div>
             <div style="margin:6px 0">${i.summary ? i.summary : '(no summary saved)'}</div>
             <div class="row" style="gap:8px">
               ${i.video_url ? `<a class="block-btn" style="flex:0 0 auto;padding:6px 10px" href="${i.video_url}" target="_blank">Watch clip</a>` : ''}
@@ -590,7 +591,14 @@
       // Show Analysis page with that report
       setHash('analysis');
       goTo('analysis');
-      renderReport(a);
+
+      if (reportMeta){
+        reportMeta.textContent = a.skill ? `Session focus: ${a.skill}` : '';
+      }
+
+      summary.textContent = a.summary || 'Summary not available.';
+      focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
+      drillList.innerHTML = (a.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
       viewLatestLink.classList.remove('hide');
@@ -606,7 +614,7 @@
   async function deleteAnalysis(id){
     if (!confirm('Delete this analysis?')) return;
     try{
-      const res = await api(`/api/analyses/${id}`, { method: 'DELETE' });
+      const res = await api(`/api/analyses/${id}`, { method:'DELETE' });
       if (!res.ok) throw new Error(res.error || 'Delete failed');
       libraryCache = libraryCache.filter(x => x.id !== id);
       renderLibrary(libraryCache);
@@ -653,3 +661,5 @@
     }
   });
   </script>
+</body>
+</html>
