@@ -206,7 +206,7 @@
     <div id="libraryList"></div>
   </section>
 
-  <script>
+    <script>
   /* =================== CONFIG =================== */
   const BASE =
     location.hostname.endsWith('github.io')
@@ -284,21 +284,23 @@
   const logoutBtn       = $('logout');
 
   function hideSplash(){ if (splash) splash.style.display='none'; }
-function renderReport(data) {
-  summary.textContent = data.summary || 'Summary not available.';
 
-  focusList.innerHTML = (data.focus || [])
-    .map(x => `<li>${x}</li>`)
-    .join('');
+  /* ============== RENDER A REPORT (ONE PLACE) ============== */
+  function renderReport(data){
+    const safeFocus  = Array.isArray(data?.focus)  ? data.focus  : [];
+    const safeDrills = Array.isArray(data?.drills) ? data.drills : [];
 
-  drillList.innerHTML = (data.drills || [])
-    .map(d => `<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`)
-    .join('');
+    summary.textContent = data?.summary || 'Summary not available.';
 
-  comps.innerHTML = (data.comps || [])
-    .map(c => `<span class="pill">${c}</span>`)
-    .join('');
-}
+    focusList.innerHTML = safeFocus
+      .map(x => `<li>${x}</li>`)
+      .join('');
+
+    drillList.innerHTML = safeDrills
+      .map(d => `<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`)
+      .join('');
+  }
+
   /* =================== MINI ROUTER =================== */
   function goTo(screen){ // 'account' | 'analysis' | 'library'
     hide(accountCard); hide(analysisCard); hide(libraryPage);
@@ -511,17 +513,31 @@ function renderReport(data) {
         return;
       }
 
-      // Fill report on same page
-      summary.textContent = out.summary || 'Summary not available.';
-      focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+      // Preferred: use the data returned by /api/analyze
+      let reportSource = out;
+
+      // Fallback: if the response doesn't actually have a real report,
+      // pull the latest saved analysis (same as Library) and use that.
+      const looksEmpty =
+        !reportSource.summary &&
+        !(Array.isArray(reportSource.focus)  && reportSource.focus.length) &&
+        !(Array.isArray(reportSource.drills) && reportSource.drills.length);
+
+      if (looksEmpty) {
+        const lib = await api('/api/analyses');
+        if (lib.ok && Array.isArray(lib.items) && lib.items.length){
+          reportSource = lib.items[0]; // newest report
+        }
+      }
+
+      renderReport(reportSource);
 
       analyzeStatus.textContent = 'Done ✅';
       analyzeStatus.className   = 'ok';
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
 
-      // Make "View report" link appear and scroll to report when clicked
+      // "View report" link just scrolls you back to the report
       viewLatestLink.classList.remove('hide');
       viewLatestLink.onclick = (e)=>{
         e.preventDefault();
@@ -574,9 +590,7 @@ function renderReport(data) {
       // Show Analysis page with that report
       setHash('analysis');
       goTo('analysis');
-      summary.textContent = a.summary || 'Summary not available.';
-      focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+      renderReport(a);
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
       viewLatestLink.classList.remove('hide');
@@ -592,7 +606,7 @@ function renderReport(data) {
   async function deleteAnalysis(id){
     if (!confirm('Delete this analysis?')) return;
     try{
-      const res = await api(`/api/analyses/${id}`, { method:'DELETE' });
+      const res = await api(`/api/analyses/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(res.error || 'Delete failed');
       libraryCache = libraryCache.filter(x => x.id !== id);
       renderLibrary(libraryCache);
@@ -639,5 +653,3 @@ function renderReport(data) {
     }
   });
   </script>
-</body>
-</html>
