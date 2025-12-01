@@ -284,7 +284,21 @@
   const logoutBtn       = $('logout');
 
   function hideSplash(){ if (splash) splash.style.display='none'; }
+function renderReport(data) {
+  summary.textContent = data.summary || 'Summary not available.';
 
+  focusList.innerHTML = (data.focus || [])
+    .map(x => `<li>${x}</li>`)
+    .join('');
+
+  drillList.innerHTML = (data.drills || [])
+    .map(d => `<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`)
+    .join('');
+
+  comps.innerHTML = (data.comps || [])
+    .map(c => `<span class="pill">${c}</span>`)
+    .join('');
+}
   /* =================== MINI ROUTER =================== */
   function goTo(screen){ // 'account' | 'analysis' | 'library'
     hide(accountCard); hide(analysisCard); hide(libraryPage);
