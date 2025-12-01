@@ -166,7 +166,7 @@
     </p>
     <p class="muted">
       You can send feedback to: <br>
-      <strong>skillzwithsyd@&lrm;gmail.com</strong> (or whatever address you prefer).
+      <strong>skillzwithsyd@&lrm;gmail.com</strong>
     </p>
   </section>
 
@@ -276,6 +276,23 @@
     try { data = await r.json(); }
     catch { data = { ok:false, error:'Bad JSON from server' }; }
     return data;
+  }
+
+  // Prefer YouTube app-friendly links (youtu.be) when possible
+  function normalizeDrillUrl(url) {
+    if (!url) return '';
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('youtube.com')) {
+        const v = u.searchParams.get('v');
+        if (v) {
+          return `https://youtu.be/${v}`;
+        }
+      }
+      return url;
+    } catch {
+      return url;
+    }
   }
 
   /* ================ ELEMENT REFS ================ */
@@ -552,9 +569,10 @@
 
       summary.textContent = out.summary || 'Summary not available.';
       focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(
-        d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`
-      ).join('');
+      drillList.innerHTML = (out.drills || []).map(d=>{
+        const u = normalizeDrillUrl(d.url || '');
+        return `<li><a class="link" href="${u}" target="_blank">${d.title || u}</a></li>`;
+      }).join('');
 
       analyzeStatus.textContent = 'Done ✅';
       analyzeStatus.className   = 'ok';
@@ -614,9 +632,10 @@
       goTo('analysis');
       summary.textContent = a.summary || 'Summary not available.';
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(
-        d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`
-      ).join('');
+      drillList.innerHTML = (a.drills || []).map(d=>{
+        const u = normalizeDrillUrl(d.url || '');
+        return `<li><a class="link" href="${u}" target="_blank">${d.title || u}</a></li>`;
+      }).join('');
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
       viewLatestLink.classList.remove('hide');
