@@ -32,13 +32,15 @@
     @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
     .block-btn{width:100%}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0f0f0f;border:1px solid var(--line);margin-right:6px}
+    a.link{color:#19d3ff;text-decoration:none;font-size:14px}
+    a.link:hover{text-decoration:underline}
 
-    /* Splash */
+    /* Splash Loader */
     #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
     #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 16px #00ff95;animation:pulse 1.2s infinite}
     @keyframes pulse{0%{transform:scale(.9);opacity:.7}50%{transform:scale(1.25);opacity:1}100%{transform:scale(.9);opacity:.7}}
 
-    /* Hamburger */
+    /* Hamburger menu – hidden until logged in */
     .menu-container{position:fixed;top:20px;right:30px;z-index:1000;display:none}
     .menu-icon{font-size:28px;cursor:pointer;color:white;user-select:none;background-color:#111;border-radius:8px;padding:6px 10px;box-shadow:0 0 8px rgba(0,0,0,0.3)}
     .menu{display:none;flex-direction:column;position:absolute;right:0;background-color:#111;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.4);padding:10px 0;min-width:150px;z-index:10;max-height:70vh;overflow:auto}
@@ -52,14 +54,15 @@
     #logoutTop{display:none}
 
     @media (max-width:1400px){
-      .menu-container{display:block !important;right:16px;top:16px;}
+      .menu-container{right:16px;top:16px}
     }
-    .app-header, header, body{overflow:visible}
+    .app-header,header,body{overflow:visible}
+
     #accountCard,#analysisCard,#libraryPage,.menu-container{position:relative;z-index:10}
   </style>
 </head>
 <body>
-  <!-- Hamburger Menu -->
+  <!-- Hamburger Menu (only after login) -->
   <div class="menu-container">
     <div class="menu-icon" id="menuIcon" aria-label="Open menu" role="button">&#9776;</div>
     <div class="menu" id="menu" role="menu">
@@ -80,12 +83,13 @@
     </div>
 
     <nav aria-label="breadcrumbs" style="display:flex;align-items:center;gap:10px">
-      <a id="pageTag" class="muted" style="text-decoration:none;font-size:14px">Analysis</a>
+      <a id="pageTag" class="muted" style="text-decoration:none;font-size:14px">Account</a>
       <button id="logoutTop" class="pill">Log out</button>
     </nav>
 
     <script>
-      (function(){
+      // Make logo work on localhost + GitHub Pages
+      (function () {
         const el = document.getElementById('logo');
         if (!el) return;
         const base = location.hostname.endsWith('github.io') ? '/ai-soccer-frontend' : '.';
@@ -94,7 +98,7 @@
     </script>
   </header>
 
-  <!-- =========== ACCOUNT =========== -->
+  <!-- =========== ACCOUNT (only before login) =========== -->
   <section class="card container" id="accountCard">
     <h3>Account</h3>
     <div class="grid">
@@ -111,6 +115,7 @@
         </div>
         <button id="signupBtn" class="block-btn">Sign Up</button>
       </div>
+
       <div>
         <p class="muted">Already have an account?</p>
         <div class="row">
@@ -123,7 +128,7 @@
     <p id="authMsg" class="muted"></p>
   </section>
 
-  <!-- =========== ANALYSIS =========== -->
+  <!-- =========== ANALYSIS (after login) =========== -->
   <section class="card container hide" id="analysisCard">
     <h3>New Analysis</h3>
 
@@ -132,17 +137,17 @@
       <div class="card" style="margin:0">
         <h4>Player + Session Info</h4>
         <div class="row">
-          <input id="heightFeet" type="number" placeholder="Height (feet)">
-          <input id="heightInches" type="number" placeholder="Height (inches)">
+          <input id="heightFeet"   type="number" placeholder="Height (ft)">
+          <input id="heightInches" type="number" placeholder="Height (in)">
         </div>
         <div class="row">
           <input id="weight" type="number" placeholder="Weight (lbs)">
-        </div>
-        <div class="row">
           <select id="foot">
             <option value="" disabled selected>Dominant Foot</option>
             <option>Right</option><option>Left</option><option>Both</option>
           </select>
+        </div>
+        <div class="row">
           <select id="position">
             <option value="" disabled selected>Position</option>
             <option>Goalkeeper</option>
@@ -152,12 +157,12 @@
           </select>
         </div>
         <div class="row">
-          <input id="skill" type="text" placeholder="What skill are you working on? (shooting, dribbling, etc)">
+          <input id="skill" type="text" placeholder="What skill are you working on? (shooting, dribbling, passing, scanning, etc)">
         </div>
         <p class="muted">These details + your clip help tailor feedback and drills to you.</p>
       </div>
 
-      <!-- Video upload -->
+      <!-- Clip Upload -->
       <div class="card" style="margin:0">
         <h4>Attach a Training Clip</h4>
         <div class="row">
@@ -169,11 +174,11 @@
       </div>
     </div>
 
-    <!-- Actions -->
+    <!-- Analyze actions -->
     <div class="row" style="margin-top:12px;align-items:center">
       <button id="analyzeBtn">Analyze</button>
       <span id="analyzeStatus" class="muted"></span>
-      <a id="viewLatest" href="#" class="muted hide">View this report ⮕</a>
+      <a href="#results" id="viewLatestLink" class="link hide">View report</a>
     </div>
 
     <!-- Results -->
@@ -194,7 +199,7 @@
     </div>
   </section>
 
-  <!-- =========== LIBRARY =========== -->
+  <!-- =========== LIBRARY PAGE =========== -->
   <section class="card container hide" id="libraryPage" aria-labelledby="libraryTitle">
     <h3 id="libraryTitle">Your Library</h3>
     <p class="muted" id="libraryHint">Click a report to view or delete it.</p>
@@ -225,50 +230,77 @@
     const t = getToken();
     if (t) headers['Authorization'] = 'Bearer ' + t;
     const r = await fetch(`${BASE}${path}`, { ...opts, headers });
-    try { return await r.json(); } catch { return { ok:false, error:'Bad JSON' }; }
+    let data;
+    try { data = await r.json(); }
+    catch { data = { ok:false, error:'Bad JSON from server' }; }
+    return data;
   }
 
   /* ================ ELEMENT REFS ================ */
-  const accountCard=$('accountCard'), analysisCard=$('analysisCard'), authMsg=$('authMsg');
-  const heightFeetEl=$('heightFeet'), heightInchesEl=$('heightInches'), weightEl=$('weight');
-  const footEl=$('foot'), positionEl=$('position'), skillEl=$('skill');
-  const clipFile=$('clipFile'), uploadBtn=$('uploadBtn'), uploadMsg=$('uploadMsg'), clipInfo=$('clipInfo');
-  const analyzeBtn=$('analyzeBtn'), analyzeStatus=$('analyzeStatus'), viewLatest=$('viewLatest');
-  const results=$('results'), summary=$('summary'), focusList=$('focusList'), drillList=$('drillList');
+  const accountCard = $('accountCard');
+  const analysisCard = $('analysisCard');
+  const libraryPage  = $('libraryPage');
+  const libraryList  = $('libraryList');
+  const pageTag      = $('pageTag');
+  const logoutTop    = $('logoutTop');
+  const splash       = $('splash');
 
-  const libraryPage = $('libraryPage');
-  const libraryList = $('libraryList');
-  const pageTag     = $('pageTag');
-  const logoutTop   = $('logoutTop');
+  const heightFeetEl   = $('heightFeet');
+  const heightInchesEl = $('heightInches');
+  const weightEl       = $('weight');
+  const footEl         = $('foot');
+  const positionEl     = $('position');
+  const skillEl        = $('skill');
 
-  const splash = $('splash');
+  const clipFile  = $('clipFile');
+  const uploadBtn = $('uploadBtn');
+  const uploadMsg = $('uploadMsg');
+  const clipInfo  = $('clipInfo');
+
+  const analyzeBtn      = $('analyzeBtn');
+  const analyzeStatus   = $('analyzeStatus');
+  const viewLatestLink  = $('viewLatestLink');
+
+  const results   = $('results');
+  const summary   = $('summary');
+  const focusList = $('focusList');
+  const drillList = $('drillList');
+
+  const authMsg  = $('authMsg');
+  const su_name  = $('su_name');
+  const su_email = $('su_email');
+  const su_password = $('su_password');
+  const su_age   = $('su_age');
+  const su_dob   = $('su_dob');
+  const li_email = $('li_email');
+  const li_password = $('li_password');
+
+  // Menu
+  const menuContainer   = document.querySelector('.menu-container');
+  const menuIcon        = $('menuIcon');
+  const menuPanel       = $('menu');
+  const newAnalysisLink = $('newAnalysis');
+  const libraryLink     = $('library');
+  const logoutBtn       = $('logout');
+
   function hideSplash(){ if (splash) splash.style.display='none'; }
 
-  const menuContainer=document.querySelector('.menu-container');
-  const menuIcon=$('menuIcon'), menuPanel=$('menu');
-  const newAnalysisLink=$('newAnalysis'), libraryLink=$('library'), logoutBtn=$('logout');
-
-  let libraryCache = [];
-  let lastVideoUrl = '', lastPublicId = '';
-  let lastAnalysisId = null;
-
-  /* ================= MENU ================= */
-  menuIcon.addEventListener('click', ()=> {
-    menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
-    if (menuPanel.style.display==='') menuPanel.style.display='flex';
-  });
-  window.addEventListener('click',(e)=>{
-    if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){ menuPanel.style.display='none'; }
-  });
-
-  /* ================= ROUTER ================= */
-  function goTo(screen){
+  /* =================== MINI ROUTER =================== */
+  function goTo(screen){ // 'account' | 'analysis' | 'library'
     hide(accountCard); hide(analysisCard); hide(libraryPage);
-    if (screen === 'analysis') { show(analysisCard); if (pageTag) pageTag.textContent='Analysis'; }
-    else if (screen === 'library') { show(libraryPage); if (pageTag) pageTag.textContent='Library'; }
-    else { show(accountCard); if (pageTag) pageTag.textContent='Account'; }
-    if (screen !== 'account' && menuContainer) menuContainer.style.display='block';
+    if (screen === 'analysis') {
+      show(analysisCard);
+      if (pageTag) pageTag.textContent = 'Analysis';
+    } else if (screen === 'library') {
+      show(libraryPage);
+      if (pageTag) pageTag.textContent = 'Library';
+    } else {
+      show(accountCard);
+      if (pageTag) pageTag.textContent = 'Account';
+    }
+    if (screen !== 'account' && menuContainer) menuContainer.style.display = 'block';
   }
+
   function setHash(screen){ location.hash = `#/${screen}`; }
   function currentHash(){ return (location.hash || '').replace(/^#\//,''); }
 
@@ -280,25 +312,35 @@
     else { setHash('analysis'); }
   });
 
+  // Menu interactions
+  menuIcon.addEventListener('click', ()=> {
+    menuPanel.style.display = (menuPanel.style.display==='flex') ? 'none' : 'flex';
+    if (menuPanel.style.display==='') menuPanel.style.display='flex';
+  });
+  window.addEventListener('click',(e)=>{
+    if (!menuPanel.contains(e.target) && !menuIcon.contains(e.target)){
+      menuPanel.style.display='none';
+    }
+  });
   newAnalysisLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
     setHash('analysis');
     hide(results);
+    viewLatestLink.classList.add('hide');
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth',block:'start'}));
   });
-  libraryLink.addEventListener('click', (e)=>{
+  libraryLink.addEventListener('click',(e)=>{
     e.preventDefault();
     menuPanel.style.display='none';
     setHash('library');
   });
 
   /* ================= AUTH ================= */
-  function setAuthMessage(t, ok=true){ authMsg.textContent=t; authMsg.className = ok ? 'ok' : 'err'; }
-
-  const su_name=$('su_name'), su_email=$('su_email'), su_password=$('su_password'),
-        su_age=$('su_age'),   su_dob=$('su_dob'),
-        li_email=$('li_email'), li_password=$('li_password');
+  function setAuthMessage(t, ok=true){
+    authMsg.textContent = t;
+    authMsg.className   = ok ? 'ok' : 'err';
+  }
 
   async function doSignup(){
     const payload = {
@@ -315,14 +357,6 @@
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
     if (out.ok && out.token){
       setToken(out.token);
-      await api('/api/profile', {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: su_name.value.trim(),
-          age: Number(su_age.value || 0),
-          dob: su_dob.value || null
-        })
-      });
       setAuthMessage(`Welcome, ${out.user?.name || payload.name}! ✅`, true);
       proceedToAnalysis();
     } else {
@@ -338,7 +372,6 @@
     const out = await api('/api/login', { method:'POST', body: JSON.stringify({email, password}) });
     if (out.ok && out.token){
       setToken(out.token);
-      try { await api('/api/profile'); } catch {}
       setAuthMessage('Logged in ✅', true);
       proceedToAnalysis();
     } else {
@@ -347,24 +380,28 @@
   }
 
   function proceedToAnalysis(){
-    setHash('analysis');
-    if (menuContainer) menuContainer.style.display='block';
+    // Show menu & header logout
+    if (menuContainer) menuContainer.style.display = 'block';
     if (logoutTop) logoutTop.style.display = 'inline-block';
+
+    setHash('analysis');
+    goTo('analysis');
     hideSplash();
     setTimeout(()=>analysisCard.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 
-  function doLogout() {
+  function doLogout(){
     clearToken();
-    try { menuPanel.style.display = 'none'; } catch {}
-    try { menuContainer.style.display = 'none'; } catch {}
-    if (logoutTop) logoutTop.style.display = 'none';
+    try { menuPanel.style.display='none'; } catch {}
+    if (menuContainer) menuContainer.style.display='none';
+    if (logoutTop) logoutTop.style.display='none';
     setHash('account');
     goTo('account');
     hide(results);
+    viewLatestLink.classList.add('hide');
   }
-  logoutBtn && logoutBtn.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
-  logoutTop && logoutTop.addEventListener('click', (e)=>{ e.preventDefault(); doLogout(); });
+  logoutBtn.addEventListener('click', e=>{e.preventDefault();doLogout();});
+  logoutTop.addEventListener('click', e=>{e.preventDefault();doLogout();});
 
   /* ============== CLOUDINARY UPLOAD ============== */
   async function uploadToCloudinary(file){
@@ -376,31 +413,31 @@
     return await r.json();
   }
 
-  async function doUpload() {
+  let lastVideoUrl = '';
+  let lastPublicId = '';
+
+  async function doUpload(){
     const f = clipFile.files?.[0];
-    if (!f) {
+    if (!f){
       uploadMsg.textContent = 'Pick a video first';
-      uploadMsg.className = 'err';
+      uploadMsg.className   = 'err';
       return;
     }
     uploadMsg.textContent = 'Uploading…';
-    uploadMsg.className = 'muted';
+    uploadMsg.className   = 'muted';
 
-    try {
+    try{
       const up = await uploadToCloudinary(f);
-
-      if (up.secure_url) {
+      if (up.secure_url){
         lastVideoUrl = up.secure_url;
         lastPublicId = up.public_id || '';
-
         uploadMsg.textContent = 'Uploaded ✅';
-        uploadMsg.className = 'ok';
-        if (clipInfo)
-          clipInfo.innerHTML = `<span class="pill">${f.name}</span>
-                                <a href="${lastVideoUrl}" target="_blank">View</a>`;
+        uploadMsg.className   = 'ok';
+        clipInfo.innerHTML = `<span class="pill">${f.name}</span> <a class="link" href="${lastVideoUrl}" target="_blank">View</a>`;
 
+        // Save clip metadata to backend
         await api('/api/clip', {
-          method: 'POST',
+          method:'POST',
           body: JSON.stringify({
             url: up.secure_url,
             public_id: up.public_id,
@@ -414,73 +451,78 @@
         });
       } else {
         uploadMsg.textContent = 'Upload failed';
-        uploadMsg.className = 'err';
+        uploadMsg.className   = 'err';
       }
-    } catch (e) {
+    }catch(e){
+      console.error(e);
       uploadMsg.textContent = 'Network error';
-      uploadMsg.className = 'err';
+      uploadMsg.className   = 'err';
     }
   }
 
   /* ==================== ANALYZE ==================== */
   async function doAnalyze(){
-    analyzeStatus.textContent='Analyzing…';
-    analyzeStatus.className='muted';
-    viewLatest.classList.add('hide');
-    lastAnalysisId = null;
+    viewLatestLink.classList.add('hide');
+    hide(results);
+
+    const payload = {
+      heightFeet:   Number(heightFeetEl.value || 0),
+      heightInches: Number(heightInchesEl.value || 0),
+      weight:       Number(weightEl.value || 0),
+      foot:         footEl.value,
+      position:     positionEl.value,
+      skill:        skillEl.value.trim(),
+      videoUrl:     lastVideoUrl,
+      publicId:     lastPublicId
+    };
+
+    if (!payload.videoUrl){
+      analyzeStatus.textContent = 'Upload a clip first';
+      analyzeStatus.className   = 'err';
+      return;
+    }
+
+    analyzeStatus.textContent = 'Analyzing… this can take a moment';
+    analyzeStatus.className   = 'muted';
 
     try{
-      const payload = {
-        heightFeet: Number(heightFeetEl.value||0),
-        heightInches: Number(heightInchesEl.value||0),
-        weight: Number(weightEl.value||0),
-        foot: footEl.value,
-        position: positionEl.value,
-        videoUrl: lastVideoUrl,
-        publicId: lastPublicId,
-        skill: (skillEl.value || '').trim()
-      };
-      if (!payload.videoUrl){
-        analyzeStatus.textContent='Upload a clip first';
-        analyzeStatus.className='err';
-        return;
-      }
+      const out = await api('/api/analyze', {
+        method:'POST',
+        body: JSON.stringify(payload)
+      });
 
-      const out = await api('/api/analyze', { method:'POST', body: JSON.stringify(payload) });
       if (!out.ok){
         analyzeStatus.textContent = out.error || 'Analyze failed';
-        analyzeStatus.className='err';
+        analyzeStatus.className   = 'err';
         return;
       }
 
-      // Render report inline
+      // Fill report on same page
       summary.textContent = out.summary || 'Summary not available.';
       focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+      drillList.innerHTML = (out.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
 
-      analyzeStatus.textContent='Done ✅';
-      analyzeStatus.className='ok';
-      results.classList.remove('hide');
-      results.scrollIntoView({behavior:'smooth', block:'start'});
+      analyzeStatus.textContent = 'Done ✅';
+      analyzeStatus.className   = 'ok';
+      show(results);
+      results.scrollIntoView({behavior:'smooth',block:'start'});
 
-      // Save latest ID for "View this report"
-      lastAnalysisId = out.analysisId || null;
-      if (lastAnalysisId){
-        viewLatest.classList.remove('hide');
-      }
+      // Make "View report" link appear and scroll to report when clicked
+      viewLatestLink.classList.remove('hide');
+      viewLatestLink.onclick = (e)=>{
+        e.preventDefault();
+        results.scrollIntoView({behavior:'smooth',block:'start'});
+      };
     }catch(e){
-      analyzeStatus.textContent='Network error';
-      analyzeStatus.className='err';
+      console.error(e);
+      analyzeStatus.textContent = 'Network error';
+      analyzeStatus.className   = 'err';
     }
   }
 
-  viewLatest.addEventListener('click', (e)=>{
-    e.preventDefault();
-    if (!lastAnalysisId) return;
-    viewAnalysis(lastAnalysisId);
-  });
-
   /* ================ LIBRARY ================ */
+  let libraryCache = [];
+
   function renderLibrary(items){
     goTo('library');
     libraryList.innerHTML = items.length
@@ -514,18 +556,20 @@
       const res = await api(`/api/analyses/${id}`);
       if (!res.ok) throw new Error(res.error || 'Not found');
 
-      goTo('analysis');
-
       const a = res.item || {};
+      // Show Analysis page with that report
+      setHash('analysis');
+      goTo('analysis');
       summary.textContent = a.summary || 'Summary not available.';
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(d=>`<li><a href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
-
-      results.classList.remove('hide');
-      results.scrollIntoView({ behavior:'smooth', block:'start' });
-
-      lastAnalysisId = id;
-      viewLatest.classList.remove('hide');
+      drillList.innerHTML = (a.drills || []).map(d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`).join('');
+      show(results);
+      results.scrollIntoView({behavior:'smooth',block:'start'});
+      viewLatestLink.classList.remove('hide');
+      viewLatestLink.onclick = (e)=>{
+        e.preventDefault();
+        results.scrollIntoView({behavior:'smooth',block:'start'});
+      };
     }catch(e){
       alert(e.message || 'Could not open analysis');
     }
@@ -534,7 +578,7 @@
   async function deleteAnalysis(id){
     if (!confirm('Delete this analysis?')) return;
     try{
-      const res = await api(`/api/analyses/${id}`, { method: 'DELETE' });
+      const res = await api(`/api/analyses/${id}`, { method:'DELETE' });
       if (!res.ok) throw new Error(res.error || 'Delete failed');
       libraryCache = libraryCache.filter(x => x.id !== id);
       renderLibrary(libraryCache);
@@ -543,40 +587,37 @@
     }
   }
 
-  document.addEventListener('click', (e)=>{
+  // Library button delegation
+  document.addEventListener('click',(e)=>{
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
     const action = t.getAttribute('data-action');
     const id = t.getAttribute('data-id');
     if (!action || !id) return;
-
-    if (action === 'view'){
-      e.preventDefault();
-      viewAnalysis(id);
-    } else if (action === 'delete'){
-      e.preventDefault();
-      deleteAnalysis(id);
-    }
+    if (action === 'view'){ e.preventDefault(); viewAnalysis(id); }
+    else if (action === 'delete'){ e.preventDefault(); deleteAnalysis(id); }
   });
 
   /* ================= WIRE UP ================= */
-  $('signupBtn') && ($('signupBtn').onclick = doSignup);
-  $('loginBtn')  && ($('loginBtn').onclick  = doLogin);
-  uploadBtn && (uploadBtn.onclick = doUpload);
-  analyzeBtn&& (analyzeBtn.onclick= doAnalyze);
+  $('signupBtn')?.addEventListener('click', doSignup);
+  $('loginBtn')?.addEventListener('click', doLogin);
+  uploadBtn?.addEventListener('click', doUpload);
+  analyzeBtn?.addEventListener('click', doAnalyze);
 
   /* ================= BOOTSTRAP ================= */
   document.addEventListener('DOMContentLoaded', () => {
     try{
       if (getToken()){
+        // User already logged in
         if (menuContainer) menuContainer.style.display='block';
-        if (logoutTop) logoutTop.style.display = 'inline-block';
+        if (logoutTop) logoutTop.style.display='inline-block';
         const page = currentHash();
         if (page === 'library') { loadLibrary(); }
-        else { setHash('analysis'); }
+        else { setHash('analysis'); goTo('analysis'); }
       } else {
+        // Logged out – hide menu & show account
         if (menuContainer) menuContainer.style.display='none';
-        if (logoutTop) logoutTop.style.display = 'none';
+        if (logoutTop) logoutTop.style.display='none';
         goTo('account');
       }
     } finally {
