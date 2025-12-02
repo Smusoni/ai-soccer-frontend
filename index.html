@@ -35,10 +35,6 @@
     a.link{color:#19d3ff;text-decoration:none;font-size:14px}
     a.link:hover{text-decoration:underline}
 
-    /* Simple field wrapper for labels (DOB) */
-    .field-wrap{display:flex;flex-direction:column;gap:4px;min-width:160px}
-    .field-label{font-size:12px;color:var(--muted);padding-left:2px}
-
     /* Splash Loader */
     #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
     #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 16px #00ff95;animation:pulse 1.2s infinite}
@@ -64,6 +60,25 @@
 
     #accountCard,#analysisCard,#libraryPage,.menu-container,#landingSection,#privacySection,#feedbackSection{
       position:relative;z-index:10
+    }
+
+    /* DOB label + grouped field */
+    .field-group{
+      display:flex;
+      flex-direction:column;
+      flex:1;
+      min-width:160px;
+    }
+    .field-label{
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 4px 2px;
+    }
+
+    /* Input error highlight for required fields */
+    .input-error{
+      border-color:#ff6b6b !important;
+      box-shadow:0 0 0 1px rgba(255,107,107,0.45);
     }
   </style>
 </head>
@@ -117,9 +132,9 @@
         <div class="row">
           <input id="su_password" type="password" placeholder="Create password">
           <input id="su_age" type="number" placeholder="Age">
-          <!-- DOB now has a visible label so text shows on iPhone -->
-          <div class="field-wrap">
-            <span class="field-label">DOB</span>
+          <!-- DOB with visible label (iOS-friendly) -->
+          <div class="field-group">
+            <span class="field-label">Date of Birth</span>
             <input id="su_dob" type="date">
           </div>
         </div>
@@ -174,7 +189,7 @@
     </p>
     <p class="muted">
       You can send feedback to: <br>
-      <strong>skillzwithsyd@&lrm;gmail.com</strong>
+      <strong>skillzwithsyd@​gmail.com</strong>
     </p>
   </section>
 
@@ -191,7 +206,7 @@
           <input id="heightInches" type="number" placeholder="Height (in)">
         </div>
         <div class="row">
-          <input id="weight" type="number" placeholder="Weight (lbs) — optional">
+          <input id="weight" type="number" placeholder="Weight (lbs) (optional)">
           <select id="foot">
             <option value="" disabled selected>Dominant Foot</option>
             <option>Right</option><option>Left</option><option>Both</option>
@@ -416,7 +431,7 @@
       dob: su_dob.value
     };
     if (!payload.name || !payload.email || !payload.password || !payload.age || !payload.dob){
-      return setAuthMessage('Please complete all sign-up fields', false);
+      return setAuthMessage('Please complete all sign-up fields (including Date of Birth).', false);
     }
     setAuthMessage('Creating your account…');
     const out = await api('/api/signup', { method:'POST', body: JSON.stringify(payload) });
@@ -522,44 +537,61 @@
   }
 
   /* ==================== ANALYZE ==================== */
+
+  function clearAnalysisValidation(){
+    [heightFeetEl, heightInchesEl, footEl, positionEl, skillEl].forEach(el=>{
+      if (!el) return;
+      el.classList.remove('input-error');
+    });
+  }
+
   async function doAnalyze(){
     viewLatestLink.classList.add('hide');
     hide(results);
+    clearAnalysisValidation();
 
-    // Raw values for validation
-    const heightFeetRaw   = (heightFeetEl.value || '').trim();
-    const heightInchesRaw = (heightInchesEl.value || '').trim();
-    const weightRaw       = (weightEl.value || '').trim(); // optional
-    const footRaw         = footEl.value;
-    const positionRaw     = positionEl.value;
-    const skillRaw        = (skillEl.value || '').trim();
+    // Required fields (except weight)
+    const required = [
+      { el: heightFeetEl,   label: 'Height (ft)' },
+      { el: heightInchesEl, label: 'Height (in)' },
+      { el: footEl,         label: 'Dominant Foot' },
+      { el: positionEl,     label: 'Position' },
+      { el: skillEl,        label: 'Skill' }
+    ];
 
-    const missingFields = [];
-    if (!heightFeetRaw)   missingFields.push('height (ft)');
-    if (heightInchesRaw === '') missingFields.push('height (in)');
-    if (!footRaw)         missingFields.push('dominant foot');
-    if (!positionRaw)     missingFields.push('position');
-    if (!skillRaw)        missingFields.push('what skill you are working on');
-    if (!lastVideoUrl)    missingFields.push('training clip upload');
+    const missingLabels = [];
+    required.forEach(({el,label})=>{
+      if (!el) return;
+      const v = (el.tagName === 'SELECT') ? el.value : el.value.trim();
+      if (!v){
+        missingLabels.push(label);
+        el.classList.add('input-error');
+      }
+    });
 
-    if (missingFields.length){
+    if (missingLabels.length){
       analyzeStatus.textContent =
-        'Before analyzing, please fill: ' + missingFields.join(', ') + '.';
-      analyzeStatus.className = 'err';
+        'Please fill these fields before analyzing: ' + missingLabels.join(', ') + '.';
+      analyzeStatus.className   = 'err';
       return;
     }
 
     const payload = {
-      heightFeet:   Number(heightFeetRaw || 0),
-      heightInches: Number(heightInchesRaw || 0),
-      // Weight is optional
-      weight:       weightRaw ? Number(weightRaw) : 0,
-      foot:         footRaw,
-      position:     positionRaw,
-      skill:        skillRaw,
+      heightFeet:   Number(heightFeetEl.value || 0),
+      heightInches: Number(heightInchesEl.value || 0),
+      weight:       weightEl.value ? Number(weightEl.value) : null,
+      foot:         footEl.value,
+      position:     positionEl.value,
+      skill:        skillEl.value.trim(),
       videoUrl:     lastVideoUrl,
       publicId:     lastPublicId
     };
+
+    if (!payload.videoUrl){
+      analyzeStatus.textContent = 'Upload a clip first before analyzing.';
+      analyzeStatus.className   = 'err';
+      return;
+    }
 
     analyzeStatus.textContent = 'Analyzing… this can take a moment';
     analyzeStatus.className   = 'muted';
@@ -571,7 +603,10 @@
       });
 
       if (!out.ok){
-        analyzeStatus.textContent = out.error || 'Analyze failed';
+        analyzeStatus.textContent =
+          (out.error && typeof out.error === 'string')
+            ? `Analysis failed: ${out.error}`
+            : 'Analysis failed. Please check your connection and try again.';
         analyzeStatus.className   = 'err';
         return;
       }
@@ -594,7 +629,7 @@
       };
     }catch(e){
       console.error(e);
-      analyzeStatus.textContent = 'Analysis failed. Please check your connection and try again.';
+      analyzeStatus.textContent = 'Analysis failed due to a network or server error. Please try again.';
       analyzeStatus.className   = 'err';
     }
   }
