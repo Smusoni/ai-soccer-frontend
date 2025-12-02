@@ -35,6 +35,10 @@
     a.link{color:#19d3ff;text-decoration:none;font-size:14px}
     a.link:hover{text-decoration:underline}
 
+    /* Simple field wrapper for labels (DOB) */
+    .field-wrap{display:flex;flex-direction:column;gap:4px;min-width:160px}
+    .field-label{font-size:12px;color:var(--muted);padding-left:2px}
+
     /* Splash Loader */
     #splash{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:5}
     #splash .pulse{width:14px;height:14px;border-radius:50%;background:#00ff95;box-shadow:0 0 16px #00ff95;animation:pulse 1.2s infinite}
@@ -113,7 +117,11 @@
         <div class="row">
           <input id="su_password" type="password" placeholder="Create password">
           <input id="su_age" type="number" placeholder="Age">
-          <input id="su_dob" type="date" placeholder="DOB">
+          <!-- DOB now has a visible label so text shows on iPhone -->
+          <div class="field-wrap">
+            <span class="field-label">DOB</span>
+            <input id="su_dob" type="date">
+          </div>
         </div>
         <button id="signupBtn" class="block-btn">Sign Up</button>
       </div>
@@ -183,7 +191,7 @@
           <input id="heightInches" type="number" placeholder="Height (in)">
         </div>
         <div class="row">
-          <input id="weight" type="number" placeholder="Weight (lbs)">
+          <input id="weight" type="number" placeholder="Weight (lbs) — optional">
           <select id="foot">
             <option value="" disabled selected>Dominant Foot</option>
             <option>Right</option><option>Left</option><option>Both</option>
@@ -276,23 +284,6 @@
     try { data = await r.json(); }
     catch { data = { ok:false, error:'Bad JSON from server' }; }
     return data;
-  }
-
-  // Prefer YouTube app-friendly links (youtu.be) when possible
-  function normalizeDrillUrl(url) {
-    if (!url) return '';
-    try {
-      const u = new URL(url);
-      if (u.hostname.includes('youtube.com')) {
-        const v = u.searchParams.get('v');
-        if (v) {
-          return `https://youtu.be/${v}`;
-        }
-      }
-      return url;
-    } catch {
-      return url;
-    }
   }
 
   /* ================ ELEMENT REFS ================ */
@@ -535,22 +526,40 @@
     viewLatestLink.classList.add('hide');
     hide(results);
 
+    // Raw values for validation
+    const heightFeetRaw   = (heightFeetEl.value || '').trim();
+    const heightInchesRaw = (heightInchesEl.value || '').trim();
+    const weightRaw       = (weightEl.value || '').trim(); // optional
+    const footRaw         = footEl.value;
+    const positionRaw     = positionEl.value;
+    const skillRaw        = (skillEl.value || '').trim();
+
+    const missingFields = [];
+    if (!heightFeetRaw)   missingFields.push('height (ft)');
+    if (heightInchesRaw === '') missingFields.push('height (in)');
+    if (!footRaw)         missingFields.push('dominant foot');
+    if (!positionRaw)     missingFields.push('position');
+    if (!skillRaw)        missingFields.push('what skill you are working on');
+    if (!lastVideoUrl)    missingFields.push('training clip upload');
+
+    if (missingFields.length){
+      analyzeStatus.textContent =
+        'Before analyzing, please fill: ' + missingFields.join(', ') + '.';
+      analyzeStatus.className = 'err';
+      return;
+    }
+
     const payload = {
-      heightFeet:   Number(heightFeetEl.value || 0),
-      heightInches: Number(heightInchesEl.value || 0),
-      weight:       Number(weightEl.value || 0),
-      foot:         footEl.value,
-      position:     positionEl.value,
-      skill:        skillEl.value.trim(),
+      heightFeet:   Number(heightFeetRaw || 0),
+      heightInches: Number(heightInchesRaw || 0),
+      // Weight is optional
+      weight:       weightRaw ? Number(weightRaw) : 0,
+      foot:         footRaw,
+      position:     positionRaw,
+      skill:        skillRaw,
       videoUrl:     lastVideoUrl,
       publicId:     lastPublicId
     };
-
-    if (!payload.videoUrl){
-      analyzeStatus.textContent = 'Upload a clip first';
-      analyzeStatus.className   = 'err';
-      return;
-    }
 
     analyzeStatus.textContent = 'Analyzing… this can take a moment';
     analyzeStatus.className   = 'muted';
@@ -569,10 +578,9 @@
 
       summary.textContent = out.summary || 'Summary not available.';
       focusList.innerHTML = (out.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (out.drills || []).map(d=>{
-        const u = normalizeDrillUrl(d.url || '');
-        return `<li><a class="link" href="${u}" target="_blank">${d.title || u}</a></li>`;
-      }).join('');
+      drillList.innerHTML = (out.drills || []).map(
+        d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`
+      ).join('');
 
       analyzeStatus.textContent = 'Done ✅';
       analyzeStatus.className   = 'ok';
@@ -586,7 +594,7 @@
       };
     }catch(e){
       console.error(e);
-      analyzeStatus.textContent = 'Network error';
+      analyzeStatus.textContent = 'Analysis failed. Please check your connection and try again.';
       analyzeStatus.className   = 'err';
     }
   }
@@ -632,10 +640,9 @@
       goTo('analysis');
       summary.textContent = a.summary || 'Summary not available.';
       focusList.innerHTML = (a.focus || []).map(x=>`<li>${x}</li>`).join('');
-      drillList.innerHTML = (a.drills || []).map(d=>{
-        const u = normalizeDrillUrl(d.url || '');
-        return `<li><a class="link" href="${u}" target="_blank">${d.title || u}</a></li>`;
-      }).join('');
+      drillList.innerHTML = (a.drills || []).map(
+        d=>`<li><a class="link" href="${d.url}" target="_blank">${d.title || d.url}</a></li>`
+      ).join('');
       show(results);
       results.scrollIntoView({behavior:'smooth',block:'start'});
       viewLatestLink.classList.remove('hide');
